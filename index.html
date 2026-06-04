@@ -1,0 +1,1815 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>故事生成器</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@300;400;500;700&display=swap");
+
+      :root {
+        --bg: #f4f0eb;
+        --surface: #ffffff;
+        --border: #d8d0c8;
+        --ink: #2a2825;
+        --ink-2: #6b6460;
+        --accent: #c07858;
+        --accent-soft: #eeddd5;
+        --green: #7ead88;
+        --green-soft: #e0f0e4;
+        --sidebar-w: 380px;
+        --preview-font: "Noto Sans SC", sans-serif;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        font-family: "Noto Sans SC", sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* ===== TOP BAR ===== */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        height: 52px;
+        background: var(--surface);
+        border-bottom: 1.5px solid var(--border);
+        flex-shrink: 0;
+        gap: 16px;
+      }
+      .topbar-logo {
+        font-family: "Ma Shan Zheng", cursive;
+        font-size: 20px;
+        color: var(--accent);
+        letter-spacing: 3px;
+        flex-shrink: 0;
+      }
+      .topbar-tabs {
+        display: flex;
+        gap: 4px;
+      }
+      .tab-btn {
+        padding: 5px 16px;
+        border-radius: 6px;
+        border: 1.5px solid transparent;
+        font-size: 13px;
+        cursor: pointer;
+        font-family: "ZCOOL KuaiLe", cursive;
+        letter-spacing: 1px;
+        transition: all 0.2s;
+        background: none;
+        color: var(--ink-2);
+      }
+      .tab-btn.active {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .tab-btn:hover:not(.active) {
+        background: var(--bg);
+      }
+
+      .topbar-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .btn {
+        padding: 6px 16px;
+        border-radius: 6px;
+        border: none;
+        font-size: 13px;
+        cursor: pointer;
+        font-family: "Noto Sans SC", sans-serif;
+        transition: all 0.18s;
+      }
+      .btn-ghost {
+        background: none;
+        border: 1.5px solid var(--border);
+        color: var(--ink-2);
+      }
+      .btn-ghost:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(192, 120, 88, 0.25);
+      }
+      .btn-primary:hover {
+        background: #b06848;
+      }
+
+      /* ===== MAIN LAYOUT ===== */
+      .main {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      /* ===== EDITOR PANEL ===== */
+      .editor-panel {
+        width: var(--sidebar-w);
+        flex-shrink: 0;
+        background: var(--surface);
+        border-right: 1.5px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .editor-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+      .editor-scroll::-webkit-scrollbar {
+        width: 4px;
+      }
+      .editor-scroll::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      /* ===== SECTION GROUPS ===== */
+      .section-group {
+        margin-bottom: 24px;
+      }
+      .section-title {
+        font-family: "ZCOOL KuaiLe", cursive;
+        font-size: 12px;
+        letter-spacing: 2px;
+        color: var(--accent);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .section-title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--accent-soft);
+      }
+
+      .field {
+        margin-bottom: 12px;
+      }
+      .field label {
+        display: block;
+        font-size: 12px;
+        color: var(--ink-2);
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+      .field input,
+      .field textarea,
+      .field select {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1.5px solid var(--border);
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: "Noto Sans SC", sans-serif;
+        color: var(--ink);
+        background: #fafaf8;
+        transition: border-color 0.2s;
+        resize: vertical;
+      }
+      .field input:focus,
+      .field textarea:focus,
+      .field select:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .field textarea {
+        min-height: 72px;
+      }
+
+      /* Color row */
+      .color-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .color-field label {
+        font-size: 11.5px;
+        color: var(--ink-2);
+        display: block;
+        margin-bottom: 4px;
+      }
+      .color-field input[type="color"] {
+        width: 100%;
+        height: 36px;
+        border: 1.5px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 2px 4px;
+        background: #fafaf8;
+      }
+
+      /* ===== CHAPTERS ===== */
+      .chapters-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .chapter-card {
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fafaf8;
+      }
+      .chapter-header {
+        display: flex;
+        align-items: center;
+        padding: 8px 10px;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+        background: var(--bg);
+        border-bottom: 1px solid transparent;
+        transition: all 0.2s;
+      }
+      .chapter-header:hover {
+        background: var(--accent-soft);
+      }
+      .chapter-header.open {
+        border-bottom-color: var(--border);
+      }
+      .chapter-num-badge {
+        font-family: "Ma Shan Zheng", cursive;
+        font-size: 16px;
+        color: var(--accent);
+        flex-shrink: 0;
+        width: 20px;
+        text-align: center;
+      }
+      .chapter-name-preview {
+        flex: 1;
+        font-size: 12.5px;
+        color: var(--ink);
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .chapter-toggle {
+        font-size: 10px;
+        color: var(--ink-2);
+        transition: transform 0.2s;
+      }
+      .chapter-header.open .chapter-toggle {
+        transform: rotate(180deg);
+      }
+      .chapter-delete {
+        background: none;
+        border: none;
+        color: #ccc;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 0 2px;
+        line-height: 1;
+        transition: color 0.2s;
+      }
+      .chapter-delete:hover {
+        color: #e8636f;
+      }
+      .chapter-body {
+        display: none;
+        padding: 10px;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .chapter-body.open {
+        display: flex;
+      }
+
+      /* Blocks inside chapter */
+      .block-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .block-item {
+        border: 1.5px solid var(--border);
+        border-radius: 6px;
+        background: var(--surface);
+        overflow: hidden;
+      }
+      .block-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        background: #f5f2ee;
+        border-bottom: 1px solid transparent;
+        cursor: pointer;
+      }
+      .block-header.open {
+        border-bottom-color: var(--border);
+      }
+      .block-type-tag {
+        font-size: 10px;
+        padding: 2px 7px;
+        border-radius: 10px;
+        font-family: "ZCOOL KuaiLe", cursive;
+        letter-spacing: 1px;
+      }
+      .tag-narrator {
+        background: #eee8ff;
+        color: #7a5ea8;
+      }
+      .tag-dialogue {
+        background: var(--green-soft);
+        color: #4a8a55;
+      }
+      .tag-phone {
+        background: #e0f0ff;
+        color: #4a78b0;
+      }
+      .tag-quote {
+        background: #2a2825;
+        color: #eee8e0;
+      }
+      .tag-monologue {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .tag-timestamp {
+        background: #FFF8E0;
+        color: #A07820;
+      }
+      .block-preview {
+        flex: 1;
+        font-size: 11px;
+        color: var(--ink-2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .block-del {
+        background: none;
+        border: none;
+        color: #ccc;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 0 2px;
+        line-height: 1;
+        transition: color 0.2s;
+      }
+      .block-del:hover {
+        color: #e8636f;
+      }
+      .block-body {
+        display: none;
+        padding: 8px;
+      }
+      .block-body.open {
+        display: block;
+      }
+
+      .block-select {
+        width: 100%;
+        padding: 5px 8px;
+        border: 1.5px solid var(--border);
+        border-radius: 5px;
+        font-size: 12px;
+        font-family: "Noto Sans SC", sans-serif;
+        background: #fafaf8;
+        color: var(--ink);
+        margin-bottom: 6px;
+      }
+      .block-select:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      .add-block-btn {
+        width: 100%;
+        padding: 6px;
+        border: 1.5px dashed var(--border);
+        border-radius: 6px;
+        background: none;
+        font-size: 12px;
+        color: var(--ink-2);
+        cursor: pointer;
+        font-family: "ZCOOL KuaiLe", cursive;
+        letter-spacing: 1px;
+        transition: all 0.2s;
+        margin-top: 4px;
+      }
+      .add-block-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .add-chapter-btn {
+        width: 100%;
+        padding: 8px;
+        border: 1.5px dashed var(--accent-soft);
+        border-radius: 8px;
+        background: none;
+        font-size: 13px;
+        color: var(--accent);
+        cursor: pointer;
+        font-family: "ZCOOL KuaiLe", cursive;
+        letter-spacing: 2px;
+        transition: all 0.2s;
+        margin-top: 4px;
+      }
+      .add-chapter-btn:hover {
+        background: var(--accent-soft);
+      }
+
+      /* Dialogue sub-fields */
+      .dialogue-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .speaker-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .mini-input {
+        width: 100%;
+        padding: 5px 8px;
+        border: 1.5px solid var(--border);
+        border-radius: 5px;
+        font-size: 12px;
+        font-family: "Noto Sans SC", sans-serif;
+        background: #fafaf8;
+        color: var(--ink);
+      }
+      .mini-input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .mini-textarea {
+        width: 100%;
+        padding: 5px 8px;
+        border: 1.5px solid var(--border);
+        border-radius: 5px;
+        font-size: 12px;
+        font-family: "Noto Sans SC", sans-serif;
+        background: #fafaf8;
+        color: var(--ink);
+        min-height: 54px;
+        resize: vertical;
+      }
+      .mini-textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .mini-label {
+        font-size: 11px;
+        color: var(--ink-2);
+        margin-bottom: 3px;
+        display: block;
+      }
+
+      /* Phone chat item */
+      .phone-msgs {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .phone-msg-row {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .phone-msg-row select {
+        width: 64px;
+        padding: 4px 5px;
+        border: 1.5px solid var(--border);
+        border-radius: 4px;
+        font-size: 11px;
+        background: #fafaf8;
+        color: var(--ink);
+        flex-shrink: 0;
+      }
+      .phone-msg-row input {
+        flex: 1;
+        padding: 4px 7px;
+        border: 1.5px solid var(--border);
+        border-radius: 4px;
+        font-size: 12px;
+        font-family: "Noto Sans SC", sans-serif;
+        background: #fafaf8;
+        color: var(--ink);
+      }
+      .phone-msg-row input:focus,
+      .phone-msg-row select:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .phone-msg-del {
+        background: none;
+        border: none;
+        color: #ccc;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 0;
+        flex-shrink: 0;
+      }
+      .phone-msg-del:hover {
+        color: #e8636f;
+      }
+      .add-msg-btn {
+        width: 100%;
+        padding: 4px;
+        border: 1px dashed var(--border);
+        border-radius: 4px;
+        background: none;
+        font-size: 11px;
+        color: var(--ink-2);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .add-msg-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* ===== PREVIEW PANEL ===== */
+      .preview-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #e8e4de;
+      }
+      .preview-label {
+        padding: 8px 20px;
+        font-size: 11px;
+        color: var(--ink-2);
+        font-family: "ZCOOL KuaiLe", cursive;
+        letter-spacing: 2px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        flex-shrink: 0;
+      }
+      .preview-frame-wrap {
+        flex: 1;
+        overflow: auto;
+        display: flex;
+        justify-content: center;
+        padding: 24px 0;
+      }
+      .preview-frame-wrap::-webkit-scrollbar {
+        width: 6px;
+      }
+      .preview-frame-wrap::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+      #preview-frame {
+        width: 480px;
+        min-height: 600px;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        background: #fff;
+        flex-shrink: 0;
+      }
+
+      /* ===== STORY LIBRARY SIDEBAR ===== */
+      .library-panel {
+        width: 220px;
+        flex-shrink: 0;
+        background: var(--surface);
+        border-left: 1.5px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .library-header {
+        padding: 12px 14px 8px;
+        font-family: "ZCOOL KuaiLe", cursive;
+        font-size: 12px;
+        letter-spacing: 2px;
+        color: var(--accent);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .library-count {
+        font-size: 10px;
+        color: var(--ink-2);
+        font-family: "Noto Sans SC", sans-serif;
+        letter-spacing: 0;
+      }
+      .library-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+      }
+      .library-scroll::-webkit-scrollbar { width: 3px; }
+      .library-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+      .library-empty {
+        padding: 24px 12px;
+        text-align: center;
+        color: var(--ink-2);
+        font-size: 12px;
+        line-height: 2;
+      }
+      .story-item {
+        padding: 10px 10px;
+        border-radius: 7px;
+        cursor: pointer;
+        border: 1.5px solid transparent;
+        transition: all 0.18s;
+        margin-bottom: 5px;
+      }
+      .story-item:hover { background: var(--accent-soft); border-color: var(--accent); }
+      .story-item.active { background: var(--accent-soft); border-color: var(--accent); }
+      .story-item-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink);
+        margin-bottom: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .story-item-meta {
+        font-size: 10.5px;
+        color: var(--ink-2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .story-item-del {
+        background: none;
+        border: none;
+        color: #ccc;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0 2px;
+        line-height: 1;
+        transition: color 0.2s;
+        flex-shrink: 0;
+      }
+      .story-item-del:hover { color: #e8636f; }
+
+      /* Complete button */
+      .editor-footer {
+        padding: 12px 16px;
+        border-top: 1.5px solid var(--border);
+        flex-shrink: 0;
+      }
+      .btn-complete {
+        width: 100%;
+        padding: 9px;
+        border-radius: 7px;
+        border: none;
+        background: var(--green);
+        color: #fff;
+        font-size: 13px;
+        font-family: "ZCOOL KuaiLe", cursive;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: background 0.18s;
+        box-shadow: 0 2px 6px rgba(126,173,136,0.3);
+      }
+      .btn-complete:hover { background: #6a9d74; }
+
+      /* ===== CHARACTER ROWS ===== */
+      .char-row {
+        border: 1.5px solid var(--border);
+        border-radius: 7px;
+        background: #fafaf8;
+        margin-bottom: 7px;
+        overflow: hidden;
+      }
+      .char-row-top {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 10px;
+      }
+      .char-index {
+        font-family: "Ma Shan Zheng", cursive;
+        font-size: 16px;
+        color: var(--accent);
+        flex-shrink: 0;
+        width: 16px;
+        text-align: center;
+      }
+      .char-name-input {
+        flex: 1;
+        min-width: 0;
+      }
+      .char-color-input {
+        width: 32px;
+        height: 28px;
+        border: 1.5px solid var(--border);
+        border-radius: 5px;
+        padding: 2px;
+        cursor: pointer;
+        background: #fafaf8;
+        flex-shrink: 0;
+      }
+      .char-side-select {
+        width: 58px;
+        padding: 4px 4px;
+        border: 1.5px solid var(--border);
+        border-radius: 5px;
+        font-size: 11px;
+        font-family: "Noto Sans SC", sans-serif;
+        background: #fafaf8;
+        color: var(--ink);
+        flex-shrink: 0;
+      }
+      .char-side-select:focus { outline: none; border-color: var(--accent); }
+      .char-del-btn {
+        background: none;
+        border: none;
+        color: #ccc;
+        cursor: pointer;
+        font-size: 13px;
+        padding: 0 2px;
+        flex-shrink: 0;
+        transition: color 0.2s;
+      }
+      .char-del-btn:hover { color: #e8636f; }
+
+      /* ===== MOBILE ===== */
+      @media (max-width: 768px) {
+        :root { --sidebar-w: 100%; }
+        body { overflow: hidden; }
+        .main { flex-direction: column; position: relative; }
+        .editor-panel {
+          width: 100%;
+          border-right: none;
+          border-bottom: 1.5px solid var(--border);
+          display: none;
+          height: calc(100vh - 52px);
+          max-height: none;
+        }
+        .editor-panel.mobile-active { display: flex; }
+        .preview-panel {
+          width: 100%;
+          display: none;
+          height: calc(100vh - 52px);
+        }
+        .preview-panel.mobile-active { display: flex; }
+        .library-panel {
+          width: 100%;
+          border-left: none;
+          border-top: 1.5px solid var(--border);
+          display: none;
+          height: calc(100vh - 52px);
+        }
+        .library-panel.mobile-active { display: flex; }
+        #preview-frame {
+          width: calc(100vw - 24px);
+          min-width: unset;
+        }
+        .topbar { padding: 0 10px; gap: 8px; }
+        .topbar-logo { font-size: 15px; letter-spacing: 1px; }
+        .topbar-actions { gap: 5px; }
+        .btn { padding: 5px 10px; font-size: 12px; }
+        .tab-btn { padding: 5px 10px; font-size: 12px; }
+        .preview-frame-wrap { padding: 12px 0; }
+      }
+      @media (min-width: 769px) {
+        .editor-panel { display: flex !important; }
+        .preview-panel { display: flex !important; }
+        .library-panel { display: flex !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-logo">故事生成器</div>
+      <div class="topbar-tabs">
+        <button class="tab-btn active" id="tab-editor" onclick="switchTab('editor')">✏️ 编辑</button>
+        <button class="tab-btn" id="tab-preview" onclick="switchTab('preview')">👁 预览</button>
+        <button class="tab-btn" id="tab-library" onclick="switchTab('library')">📚 故事库</button>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" onclick="newStory()" title="新建故事">＋ 新建</button>
+        <button class="btn btn-ghost" onclick="exportHTML()">⬇ 导出</button>
+        <button class="btn btn-primary" onclick="renderPreview()">刷新预览</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <!-- EDITOR -->
+      <div class="editor-panel mobile-active" id="editor-panel">
+        <div class="editor-scroll">
+          <!-- META -->
+          <div class="section-group">
+            <div class="section-title">基本信息</div>
+            <div class="field">
+              <label>故事标题</label>
+              <input type="text" id="meta-title" value="标题" placeholder="故事标题" />
+            </div>
+            <div class="field">
+              <label>副标题</label>
+              <input type="text" id="meta-subtitle" value="一个女儿，一个妈妈，一道缝" placeholder="副标题" />
+            </div>
+            <div class="field">
+              <label>标签文字（小）</label>
+              <input type="text" id="meta-tag" value="图文故事" placeholder="如：图文故事、沸点记录" />
+            </div>
+            <div class="field">
+              <label>结尾寄语</label>
+              <textarea id="meta-ending" placeholder="结尾文字…">愿每个人都能拥有自己真正想要的生活</textarea>
+            </div>
+          </div>
+
+          <!-- CHARACTERS -->
+          <div class="section-group">
+            <div class="section-title">人物设置</div>
+            <div id="chars-container"></div>
+            <button class="add-chapter-btn" style="margin-top:6px;border-color:var(--green);color:var(--green)" onclick="addChar()">＋ 添加角色</button>
+          </div>
+
+          <!-- THEME -->
+          <div class="section-group">
+            <div class="section-title">主题配色</div>
+            <div class="color-row">
+              <div class="color-field">
+                <label>主色调（标题/强调）</label>
+                <input type="color" id="theme-accent" value="#C07858" />
+              </div>
+              <div class="color-field">
+                <label>页面背景色</label>
+                <input type="color" id="theme-bg" value="#F7F3EE" />
+              </div>
+            </div>
+          </div>
+
+          <!-- CHAPTERS -->
+          <div class="section-group">
+            <div class="section-title">章节内容</div>
+            <div class="chapters-list" id="chapters-list"></div>
+            <button class="add-chapter-btn" onclick="addChapter()">＋ 添加章节</button>
+          </div>
+        </div>
+        <div class="editor-footer">
+          <button class="btn-complete" onclick="completeStory()">✓ 完成，保存到故事库</button>
+        </div>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="preview-panel mobile-active" id="preview-panel">
+        <div class="preview-label">预览（480px 手机宽度）</div>
+        <div class="preview-frame-wrap">
+          <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+      </div>
+
+      <!-- LIBRARY -->
+      <div class="library-panel" id="library-panel">
+        <div class="library-header">
+          <span>📚 故事库</span>
+          <span class="library-count" id="library-count">0 篇</span>
+        </div>
+        <div class="library-scroll" id="library-scroll">
+          <div class="library-empty" id="library-empty">还没有完成的故事<br>点击「完成」保存当前故事</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== DATA MODEL =====
+      let story = {
+        title: "标题",
+        subtitle: "副标题",
+        tag: "图文故事",
+        ending: "愿每个人都能拥有自己真正想要的生活",
+        characters: [
+          { id: "c0", name: "主角", color: "#E0F0E4", side: "left" },
+          { id: "c1", name: "配角", color: "#FFF0E8", side: "right" }
+        ],
+        accent: "#C07858",
+        bg: "#F7F3EE",
+        chapters: [],
+      };
+
+      // Migrate old charA/charB storage format if needed
+      function migrateStory(s) {
+        if (!s.characters) {
+          s.characters = [
+            { id: "c0", name: s.charA ? s.charA.name : "主角", color: s.charA ? s.charA.color : "#E0F0E4", side: "left" },
+            { id: "c1", name: s.charB ? s.charB.name : "配角", color: s.charB ? s.charB.color : "#FFF0E8", side: "right" }
+          ];
+          delete s.charA; delete s.charB;
+          // Migrate block speaker from "A"/"B" to character id
+          (s.chapters || []).forEach(ch => {
+            (ch.blocks || []).forEach(b => {
+              if (b.type === "dialogue") {
+                if (b.speaker === "A") b.speaker = "c0";
+                else if (b.speaker === "B") b.speaker = "c1";
+              }
+              if (b.type === "phone") {
+                (b.messages || []).forEach(m => {
+                  if (m.side === "right" && !m.charId) m.charId = "c0";
+                  else if (!m.charId) m.charId = "c1";
+                });
+              }
+            });
+          });
+        }
+        return s;
+      }
+
+      let _charIdCounter = 2;
+      function newCharId() { return "c" + (++_charIdCounter + Date.now() % 10000); }
+
+      const NUMERALS = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+
+      // ===== STORAGE (localStorage persistence) =====
+      const STORAGE_KEY = "storyGenerator_draft";
+      const LIBRARY_KEY = "storyGenerator_library";
+
+      function saveToStorage() {
+        try {
+          readFormToStory();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(story));
+        } catch(e) {}
+      }
+
+      function loadFromStorage() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const parsed = migrateStory(JSON.parse(saved));
+            Object.assign(story, parsed);
+            return true;
+          }
+        } catch(e) {}
+        return false;
+      }
+
+      function loadLibrary() {
+        try {
+          return JSON.parse(localStorage.getItem(LIBRARY_KEY) || "[]");
+        } catch(e) { return []; }
+      }
+
+      function saveLibrary(lib) {
+        try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib)); } catch(e) {}
+      }
+
+      // ===== INIT =====
+      function init() {
+        loadFromStorage();
+        syncFormToStory();
+        renderChaptersList();
+        renderPreview();
+        setupLiveSync();
+        renderLibrary();
+      }
+
+      function syncFormToStory() {
+        document.getElementById("meta-title").value = story.title;
+        document.getElementById("meta-subtitle").value = story.subtitle;
+        document.getElementById("meta-tag").value = story.tag;
+        document.getElementById("meta-ending").value = story.ending;
+        document.getElementById("theme-accent").value = story.accent;
+        document.getElementById("theme-bg").value = story.bg;
+        renderCharsSection();
+      }
+
+      function readFormToStory() {
+        story.title = document.getElementById("meta-title").value;
+        story.subtitle = document.getElementById("meta-subtitle").value;
+        story.tag = document.getElementById("meta-tag").value;
+        story.ending = document.getElementById("meta-ending").value;
+        story.accent = document.getElementById("theme-accent").value;
+        story.bg = document.getElementById("theme-bg").value;
+        // characters are written directly on change in renderCharsSection
+      }
+
+      function setupLiveSync() {
+        ["meta-title", "meta-subtitle", "meta-tag", "meta-ending", "theme-accent", "theme-bg"].forEach((id) => {
+          const el = document.getElementById(id);
+          el.addEventListener("input", () => {
+            readFormToStory();
+            renderPreview();
+            saveToStorage();
+          });
+          el.addEventListener("change", () => {
+            readFormToStory();
+            renderPreview();
+            saveToStorage();
+          });
+        });
+      }
+
+      // ===== CHARACTERS SECTION =====
+      function renderCharsSection() {
+        const container = document.getElementById("chars-container");
+        if (!container) return;
+        container.innerHTML = story.characters.map((ch, ci) => `
+          <div class="char-row" id="char-row-${ch.id}">
+            <div class="char-row-top">
+              <span class="char-index">${ci + 1}</span>
+              <input class="mini-input char-name-input" value="${escHtml(ch.name)}" placeholder="角色名称"
+                oninput="story.characters[${ci}].name=this.value;renderBlockLists();renderPreview();saveToStorage()">
+              <input type="color" class="char-color-input" value="${ch.color}"
+                oninput="story.characters[${ci}].color=this.value;renderBlockLists();renderPreview();saveToStorage()"
+                onchange="story.characters[${ci}].color=this.value;renderBlockLists();renderPreview();saveToStorage()">
+              <select class="char-side-select"
+                onchange="story.characters[${ci}].side=this.value;renderBlockLists();renderPreview();saveToStorage()">
+                <option value="left" ${ch.side === "left" ? "selected" : ""}>左侧</option>
+                <option value="right" ${ch.side === "right" ? "selected" : ""}>右侧</option>
+              </select>
+              ${story.characters.length > 1 ? `<button class="char-del-btn" onclick="deleteChar(${ci})" title="删除角色">✕</button>` : ""}
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function addChar() {
+        story.characters.push({ id: newCharId(), name: "新角色", color: "#E8E0FF", side: "left" });
+        renderCharsSection();
+        renderBlockLists();
+        renderPreview();
+        saveToStorage();
+      }
+
+      function deleteChar(ci) {
+        if (story.characters.length <= 1) { alert("至少保留一个角色"); return; }
+        const removedId = story.characters[ci].id;
+        story.characters.splice(ci, 1);
+        // Replace removed speaker in blocks with first remaining char
+        story.chapters.forEach(ch => {
+          ch.blocks.forEach(b => {
+            if (b.type === "dialogue" && b.speaker === removedId) b.speaker = story.characters[0].id;
+            if (b.type === "phone") {
+              (b.messages || []).forEach(m => {
+                if (m.charId === removedId) m.charId = story.characters[0].id;
+              });
+            }
+          });
+        });
+        renderCharsSection();
+        renderChaptersList();
+        renderPreview();
+        saveToStorage();
+      }
+
+      function renderBlockLists() {
+        story.chapters.forEach((_, ci) => renderBlockList(ci));
+      }
+
+      // ===== CHAPTERS UI =====
+      function renderChaptersList() {
+        const list = document.getElementById("chapters-list");
+        list.innerHTML = "";
+        story.chapters.forEach((ch, ci) => {
+          const card = document.createElement("div");
+          card.className = "chapter-card";
+          card.innerHTML = `
+      <div class="chapter-header" onclick="toggleChapter(${ci}, this)">
+        <span class="chapter-num-badge">${ch.numeral || NUMERALS[ci] || ci + 1}</span>
+        <span class="chapter-name-preview">${ch.title || "（未命名章节）"}</span>
+        <button class="chapter-delete" onclick="event.stopPropagation();deleteChapter(${ci})" title="删除章节">✕</button>
+        <span class="chapter-toggle">▼</span>
+      </div>
+      <div class="chapter-body" id="ch-body-${ci}">
+        <div class="field" style="margin-bottom:6px">
+          <label>章节标题</label>
+          <input type="text" class="mini-input" value="${escHtml(ch.title)}" oninput="story.chapters[${ci}].title=this.value;updateChapterPreview(${ci});renderPreview();saveToStorage()">
+        </div>
+        <div class="field" style="margin-bottom:8px">
+          <label>序号（汉字）</label>
+          <input type="text" class="mini-input" style="width:80px" value="${escHtml(ch.numeral || NUMERALS[ci] || String(ci + 1))}" oninput="story.chapters[${ci}].numeral=this.value;renderPreview();saveToStorage()">
+        </div>
+        <div class="block-list" id="blocks-${ci}"></div>
+        <button class="add-block-btn" onclick="addBlock(${ci})">＋ 添加内容块</button>
+      </div>
+    `;
+          list.appendChild(card);
+          renderBlockList(ci);
+        });
+      }
+
+      function updateChapterPreview(ci) {
+        const card = document.querySelectorAll(".chapter-card")[ci];
+        if (card) card.querySelector(".chapter-name-preview").textContent = story.chapters[ci].title || "（未命名章节）";
+      }
+
+      function toggleChapter(ci, header) {
+        const body = document.getElementById(`ch-body-${ci}`);
+        const isOpen = body.classList.toggle("open");
+        header.classList.toggle("open", isOpen);
+      }
+
+      function deleteChapter(ci) {
+        if (story.chapters.length <= 1) return alert("至少保留一个章节");
+        story.chapters.splice(ci, 1);
+        renderChaptersList();
+        renderPreview();
+        saveToStorage();
+      }
+
+      function addChapter() {
+        const idx = story.chapters.length;
+        const defaultSpeaker = story.characters[0] ? story.characters[0].id : "c0";
+        story.chapters.push({ title: "新章节", numeral: NUMERALS[idx] || String(idx + 1), blocks: [{ type: "narrator", text: "对话内容…", speaker: defaultSpeaker }] });
+        renderChaptersList();
+        renderPreview();
+        saveToStorage();
+        // auto open new chapter
+        const newHeader = document.querySelectorAll(".chapter-header")[idx];
+        if (newHeader) toggleChapter(idx, newHeader);
+      }
+
+      // ===== BLOCKS UI =====
+      const BLOCK_LABELS = {
+        narrator: "旁白",
+        dialogue: "对话",
+        phone: "手机聊天",
+        quote: "金句卡片",
+        monologue: "内心独白",
+        timestamp: "时间地点",
+      };
+      const BLOCK_TAG_CLASS = {
+        narrator: "tag-narrator",
+        dialogue: "tag-dialogue",
+        phone: "tag-phone",
+        quote: "tag-quote",
+        monologue: "tag-monologue",
+        timestamp: "tag-timestamp",
+      };
+
+      function renderBlockList(ci) {
+        const container = document.getElementById(`blocks-${ci}`);
+        if (!container) return;
+        container.innerHTML = "";
+        story.chapters[ci].blocks.forEach((block, bi) => {
+          const item = document.createElement("div");
+          item.className = "block-item";
+          const preview = getBlockPreview(block);
+          item.innerHTML = `
+      <div class="block-header" onclick="toggleBlock(this, '${ci}-${bi}')">
+        <span class="block-type-tag ${BLOCK_TAG_CLASS[block.type]}">${BLOCK_LABELS[block.type]}</span>
+        <span class="block-preview">${escHtml(preview)}</span>
+        <button class="block-del" onclick="event.stopPropagation();deleteBlock(${ci},${bi})">✕</button>
+      </div>
+      <div class="block-body" id="block-body-${ci}-${bi}">
+        ${renderBlockEditor(ci, bi, block)}
+      </div>
+    `;
+          container.appendChild(item);
+        });
+      }
+
+      function getBlockPreview(block) {
+        if (block.type === "phone") return block.header || "手机消息";
+        if (block.type === "timestamp") return [block.time, block.place].filter(Boolean).join(" · ") || "时间地点";
+        if (block.type === "dialogue") return (block.text || "").replace(/\n/g, " ").slice(0, 30);
+        return (block.text || "").replace(/\n/g, " ").slice(0, 30);
+      }
+
+      function toggleBlock(header, id) {
+        const body = document.getElementById(`block-body-${id}`);
+        const isOpen = body.classList.toggle("open");
+        header.classList.toggle("open", isOpen);
+      }
+
+      function deleteBlock(ci, bi) {
+        story.chapters[ci].blocks.splice(bi, 1);
+        renderBlockList(ci);
+        renderPreview();
+        saveToStorage();
+      }
+
+      function addBlock(ci) {
+        const defaultSpeaker = story.characters[0] ? story.characters[0].id : "c0";
+        story.chapters[ci].blocks.push({ type: "narrator", text: "", speaker: defaultSpeaker });
+        // Save editor scroll position
+        const edScroll = document.querySelector(".editor-scroll");
+        const savedScrollTop = edScroll ? edScroll.scrollTop : 0;
+        renderBlockList(ci);
+        // Restore editor scroll
+        if (edScroll) edScroll.scrollTop = savedScrollTop;
+        renderPreview();
+        saveToStorage();
+        // auto open
+        const blocks = document.querySelectorAll(`#blocks-${ci} .block-header`);
+        const last = blocks[blocks.length - 1];
+        if (last) {
+          const bi = story.chapters[ci].blocks.length - 1;
+          toggleBlock(last, `${ci}-${bi}`);
+        }
+      }
+
+      function renderBlockEditor(ci, bi, block) {
+        const typeSelect = `
+    <select class="block-select" onchange="changeBlockType(${ci},${bi},this.value)">
+      ${["narrator", "dialogue", "phone", "quote", "monologue", "timestamp"].map((t) => `<option value="${t}" ${block.type === t ? "selected" : ""}>${BLOCK_LABELS[t]}</option>`).join("")}
+    </select>
+  `;
+
+        let fields = "";
+
+        if (block.type === "narrator" || block.type === "quote" || block.type === "monologue") {
+          fields = `<textarea class="mini-textarea" placeholder="输入文字…" oninput="story.chapters[${ci}].blocks[${bi}].text=this.value;renderPreview();saveToStorage()">${escHtml(block.text || "")}</textarea>`;
+        }
+
+        if (block.type === "timestamp") {
+          fields = `
+      <div class="dialogue-fields">
+        <span class="mini-label">时间</span>
+        <input type="text" class="mini-input" placeholder="如：5:40 PM" value="${escHtml(block.time || "")}" oninput="story.chapters[${ci}].blocks[${bi}].time=this.value;renderPreview();saveToStorage()" style="margin-bottom:6px">
+        <span class="mini-label">地点（可留空）</span>
+        <input type="text" class="mini-input" placeholder="如：她的小区门口" value="${escHtml(block.place || "")}" oninput="story.chapters[${ci}].blocks[${bi}].place=this.value;renderPreview();saveToStorage()">
+      </div>
+    `;
+        }
+
+        if (block.type === "dialogue") {
+          const speakerOptions = story.characters.map(c =>
+            `<option value="${c.id}" ${block.speaker === c.id ? "selected" : ""}>${escHtml(c.name)}</option>`
+          ).join("");
+          fields = `
+      <div class="dialogue-fields">
+        <div class="speaker-row">
+          <div>
+            <span class="mini-label">说话人</span>
+            <select class="block-select" style="margin-bottom:0" onchange="story.chapters[${ci}].blocks[${bi}].speaker=this.value;renderPreview();saveToStorage()">
+              ${speakerOptions}
+            </select>
+          </div>
+        </div>
+        <span class="mini-label">对话内容</span>
+        <textarea class="mini-textarea" placeholder="对话内容…" oninput="story.chapters[${ci}].blocks[${bi}].text=this.value;renderPreview();saveToStorage()">${escHtml(block.text || "")}</textarea>
+        <span class="mini-label">内心旁白（可留空）</span>
+        <input type="text" class="mini-input" placeholder="说完这句话，我想到了…" value="${escHtml(block.thought || "")}" oninput="story.chapters[${ci}].blocks[${bi}].thought=this.value;renderPreview();saveToStorage()">
+      </div>
+    `;
+        }
+
+        if (block.type === "phone") {
+          const msgs = block.messages || [];
+          const charOptions = story.characters.map(c =>
+            `<option value="${c.id}">${escHtml(c.name)}</option>`
+          ).join("");
+          const msgsHtml = msgs
+            .map(
+              (m, mi) => {
+                const charOpts = story.characters.map(c =>
+                  `<option value="${c.id}" ${(m.charId || (m.side === "right" ? (story.characters[0]?.id||"") : (story.characters[1]?.id||""))) === c.id ? "selected" : ""}>${escHtml(c.name)}</option>`
+                ).join("");
+                return `
+      <div class="phone-msg-row" id="pmsg-${ci}-${bi}-${mi}">
+        <select onchange="story.chapters[${ci}].blocks[${bi}].messages[${mi}].charId=this.value;renderPreview();saveToStorage()" style="width:72px">
+          ${charOpts}
+        </select>
+        <input type="text" value="${escHtml(m.text || "")}" placeholder="消息内容…" oninput="story.chapters[${ci}].blocks[${bi}].messages[${mi}].text=this.value;renderPreview();saveToStorage()">
+        <button class="phone-msg-del" onclick="deletePhoneMsg(${ci},${bi},${mi})">✕</button>
+      </div>
+    `;
+              }
+            )
+            .join("");
+          fields = `
+      <span class="mini-label">标题文字</span>
+      <input type="text" class="mini-input" value="${escHtml(block.header || "—— 微信消息 ——")}" placeholder="—— 微信消息 ——" style="margin-bottom:6px" oninput="story.chapters[${ci}].blocks[${bi}].header=this.value;renderPreview();saveToStorage()">
+      <span class="mini-label">消息列表</span>
+      <div class="phone-msgs" id="phone-msgs-${ci}-${bi}">${msgsHtml}</div>
+      <button class="add-msg-btn" onclick="addPhoneMsg(${ci},${bi})">＋ 添加消息</button>
+    `;
+        }
+
+        return typeSelect + fields;
+      }
+
+      function changeBlockType(ci, bi, newType) {
+        const old = story.chapters[ci].blocks[bi];
+        const defaultSpeaker = story.characters[0] ? story.characters[0].id : "c0";
+        story.chapters[ci].blocks[bi] = { type: newType, text: old.text || "", thought: "", speaker: old.speaker || defaultSpeaker, messages: old.messages || [], header: old.header || "" };
+        renderBlockList(ci);
+        renderPreview();
+        saveToStorage();
+        // reopen
+        const headers = document.querySelectorAll(`#blocks-${ci} .block-header`);
+        if (headers[bi]) toggleBlock(headers[bi], `${ci}-${bi}`);
+      }
+
+      function addPhoneMsg(ci, bi) {
+        if (!story.chapters[ci].blocks[bi].messages) story.chapters[ci].blocks[bi].messages = [];
+        story.chapters[ci].blocks[bi].messages.push({ side: "left", text: "" });
+        renderBlockList(ci);
+        renderPreview();
+        saveToStorage();
+        // reopen
+        const headers = document.querySelectorAll(`#blocks-${ci} .block-header`);
+        if (headers[bi]) {
+          const body = document.getElementById(`block-body-${ci}-${bi}`);
+          if (!body.classList.contains("open")) toggleBlock(headers[bi], `${ci}-${bi}`);
+        }
+      }
+
+      function deletePhoneMsg(ci, bi, mi) {
+        story.chapters[ci].blocks[bi].messages.splice(mi, 1);
+        renderBlockList(ci);
+        renderPreview();
+        saveToStorage();
+      }
+
+      // ===== HTML GENERATOR =====
+      function generateHTML() {
+        readFormToStory();
+        const { title, subtitle, tag, ending, characters, accent, bg, chapters } = story;
+
+        // derive colors
+        const accentHex = accent;
+        const accentSoft = hexToRgba(accent, 0.15);
+        // Build CSS vars for each character color
+        const charColorVars = (characters || []).map((c, i) =>
+          `  --char-color-${i}: ${c.color};`
+        ).join("\n");
+
+        const chaptersHTML = chapters
+          .map((ch, ci) => {
+            const num = ch.numeral || NUMERALS[ci] || String(ci + 1);
+            const blocksHTML = ch.blocks.map((block) => renderBlockHTML(block, characters, accent)).join("\n");
+            return `
+  <div class="chapter fade-in" id="ch${ci}">
+    <div class="chapter-num">${num}</div>
+    <div class="chapter-line"></div>
+    <div class="chapter-title">${escHtml(ch.title)}</div>
+  </div>
+  ${blocksHTML}`;
+          })
+          .join("\n");
+
+        const tocItems = chapters
+          .map((ch, ci) => {
+            const num = ch.numeral || NUMERALS[ci] || String(ci + 1);
+            return `<li class="toc-item${ci === 0 ? " active" : ""}"><a href="#ch${ci}"><span class="toc-num">${num}</span><span class="toc-label">${escHtml(ch.title)}</span></a></li>`;
+          })
+          .join("\n      ");
+
+        return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escHtml(title)}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+  :root {
+    --bg: ${bg};
+    --accent: ${accentHex};
+    --accent-soft: ${accentSoft};
+    --a-color: ${(characters[0]||{color:"#E0F0E4"}).color};
+    --b-color: ${(characters[1]||characters[0]||{color:"#FFF0E8"}).color};
+${charColorVars}
+    --ink: #2D2B2A;
+    --ink-2: #6B6460;
+    --border: #3D3A38;
+    --panel-bg: #FFFFFF;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--bg); font-family:'Noto Sans SC',sans-serif; color:var(--ink); overflow-x:hidden; }
+  body { -webkit-user-select:none; user-select:none; }
+
+  .wrap { max-width:480px; margin:0 auto; padding:0 14px 80px; }
+
+  /* Header */
+  .header { text-align:center; padding:48px 20px 36px; }
+  .header-tag { display:inline-block; font-family:'ZCOOL KuaiLe',cursive; font-size:11px; letter-spacing:3px; color:var(--accent); border:1.5px solid var(--accent); padding:3px 12px; border-radius:20px; margin-bottom:16px; opacity:0.7; }
+  .header h1 { font-family:'Ma Shan Zheng',cursive; font-size:40px; color:var(--ink); letter-spacing:6px; margin-bottom:10px; }
+  .header h1 span { color:var(--accent); }
+  .header .sub { font-family:'ZCOOL KuaiLe',cursive; font-size:13px; color:var(--ink-2); letter-spacing:2px; margin-bottom:14px; }
+  .deco { width:50px; height:3px; background:var(--accent); margin:0 auto; border-radius:2px; opacity:0.6; }
+
+  /* Chapter */
+  .chapter { display:flex; align-items:center; gap:12px; margin:36px 0 18px; }
+  .chapter-num { font-family:'Ma Shan Zheng',cursive; font-size:30px; color:var(--accent); flex-shrink:0; line-height:1; }
+  .chapter-line { flex:1; height:1.5px; background:linear-gradient(90deg,var(--accent),transparent); opacity:0.4; }
+  .chapter-title { font-family:'ZCOOL KuaiLe',cursive; font-size:15px; color:var(--ink-2); letter-spacing:2px; flex-shrink:0; }
+
+  /* Panel */
+  .panel { background:var(--panel-bg); border:2px solid var(--border); border-radius:8px; margin-bottom:14px; overflow:hidden; box-shadow:3px 3px 0 rgba(0,0,0,0.07); }
+
+  /* Narrator */
+  .narrator { padding:14px 16px; font-size:13px; line-height:1.95; color:var(--ink-2); font-style:italic; background:linear-gradient(135deg,#FAFAF8,#F5F2EE); }
+
+  /* Monologue */
+  .monologue { padding:16px 18px; border-left:3px solid var(--accent); background:linear-gradient(135deg,rgba(255,255,255,0.8),var(--bg)); font-size:13px; line-height:1.9; font-style:italic; }
+  .monologue strong { font-style:normal; color:var(--accent); }
+
+  /* Dialogue */
+  .dialogue-row { display:flex; gap:10px; padding:14px; align-items:flex-start; }
+  .dialogue-row.rev { flex-direction:row-reverse; }
+  .avatar { width:38px; height:38px; border-radius:50%; flex-shrink:0; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--ink-2); }
+  .bwrap { max-width:75%; }
+  .bname { font-size:11px; font-weight:700; color:var(--ink-2); margin-bottom:4px; }
+  .bubble { padding:10px 14px; border-radius:16px; font-size:13.5px; line-height:1.75; word-break:break-word; }
+  .bubble.a { background:var(--a-color); border:1.5px solid rgba(0,0,0,0.08); border-bottom-left-radius:4px; }
+  .bubble.b { background:var(--b-color); border:1.5px solid rgba(0,0,0,0.08); border-bottom-right-radius:4px; }
+  .thought { font-size:11px; color:var(--ink-2); font-style:italic; display:block; margin-top:6px; border-top:1px dashed rgba(0,0,0,0.1); padding-top:6px; }
+
+  /* Phone */
+  .phone-chat { padding:14px; background:#EDEDED; }
+  .phone-header { text-align:center; font-size:11px; color:#888; margin-bottom:12px; font-family:'ZCOOL KuaiLe',cursive; }
+  .msg-row { display:flex; margin-bottom:8px; }
+  .msg-row.right { justify-content:flex-end; }
+  .msg-bubble { max-width:72%; padding:8px 12px; font-size:13px; line-height:1.65; word-break:break-word; }
+  .msg-bubble.left { background:#fff; border-radius:4px 12px 12px 12px; }
+  .msg-bubble.right { background:#9FD280; border-radius:12px 4px 12px 12px; color:#1a3d0a; }
+
+  /* Timestamp */
+  .timestamp-bar { display:flex; align-items:center; justify-content:center; gap:7px; margin:18px 0 10px; }
+  .ts-dot { font-size:7px; color:#F5C842; line-height:1; flex-shrink:0; text-shadow:0 0 4px rgba(245,200,66,0.5); }
+  .ts-text { display:inline-block; background:#FFFBEC; border:1px solid #F0E0A0; border-radius:20px; padding:4px 14px; font-size:11.5px; color:#7A6020; letter-spacing:0.5px; font-family:'Noto Sans SC',sans-serif; }
+
+  /* Quote */
+  .quote-card { background:var(--ink); border-radius:8px; padding:24px 20px; margin-bottom:14px; box-shadow:3px 3px 0 rgba(0,0,0,0.15); position:relative; overflow:hidden; }
+  .quote-card::before { content:'"'; position:absolute; top:-10px; left:10px; font-family:'Ma Shan Zheng',cursive; font-size:100px; color:rgba(255,255,255,0.06); line-height:1; }
+  .quote-card p { font-size:13.5px; line-height:1.9; color:#EEE8E0; position:relative; z-index:1; white-space:pre-line; }
+  .quote-card p strong { color:#F2C879; }
+
+  /* End card */
+  .end-card { text-align:center; padding:40px 20px; background:var(--panel-bg); border:2px solid var(--border); border-radius:8px; margin-top:32px; box-shadow:3px 3px 0 rgba(0,0,0,0.07); }
+  .end-hearts { font-size:20px; letter-spacing:6px; margin-bottom:12px; color:var(--accent); }
+  .end-sub { font-size:12px; color:var(--ink-2); line-height:2; }
+
+  /* Fade in */
+  .fade-in { opacity:0; transform:translateY(14px); transition:opacity 0.6s ease,transform 0.6s ease; }
+  .fade-in.visible { opacity:1; transform:translateY(0); }
+
+  /* Status */
+  .status { position:fixed; bottom:0; left:0; right:0; background:rgba(247,243,238,0.92); backdrop-filter:blur(8px); border-top:1px solid rgba(0,0,0,0.1); padding:7px 16px; font-size:11px; color:var(--ink-2); text-align:center; z-index:100; }
+
+  /* TOC sidebar */
+  .toc { display:none; position:fixed; right:24px; top:50%; transform:translateY(-50%); z-index:200; }
+  @media(min-width:900px){ .toc{display:block;} }
+  .toc-inner { background:var(--panel-bg); border:1.5px solid var(--border); border-radius:8px; padding:14px 10px; box-shadow:3px 3px 0 rgba(0,0,0,0.07); min-width:110px; }
+  .toc-head { font-family:'ZCOOL KuaiLe',cursive; font-size:11px; letter-spacing:3px; color:var(--ink-2); text-align:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #eee; }
+  .toc-list { list-style:none; }
+  .toc-item { margin-bottom:2px; }
+  .toc-item a { display:flex; align-items:center; gap:6px; padding:5px 8px; border-radius:6px; text-decoration:none; transition:background 0.2s; }
+  .toc-item a:hover { background:#F5F0EA; }
+  .toc-item.active a { background:rgba(192,120,88,0.12); }
+  .toc-num { font-family:'Ma Shan Zheng',cursive; font-size:14px; color:var(--accent); flex-shrink:0; line-height:1; }
+  .toc-label { font-size:11px; color:var(--ink-2); letter-spacing:1px; }
+
+  /* Scroll top */
+  #sto { position:fixed; right:20px; bottom:58px; width:36px; height:36px; border-radius:50%; background:var(--accent); color:#fff; border:none; font-size:16px; cursor:pointer; display:none; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.15); z-index:150; }
+  #sto.show { display:flex; }
+  @media(min-width:900px){ #sto{right:155px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header fade-in">
+    <div class="header-tag">${escHtml(tag)}</div>
+    <h1><span>${escHtml(title)}</span></h1>
+    <div class="sub">${escHtml(subtitle)}</div>
+    <div class="deco"></div>
+  </div>
+
+${chaptersHTML}
+
+  <div class="end-card fade-in">
+    <div class="end-hearts">♡ ♡ ♡</div>
+    <div class="end-sub">${escHtml(ending)}</div>
+  </div>
+
+</div>
+
+<div class="status">${escHtml(title)} · ${escHtml(tag)}</div>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <div class="toc-head">章 节</div>
+    <ul class="toc-list">
+      ${tocItems}
+    </ul>
+  </div>
+</nav>
+
+<button id="sto" aria-label="回到顶部">↑</button>
+
+<script>
+  const obs = new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.08,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
+  const sto=document.getElementById('sto');
+  window.addEventListener('scroll',()=>sto.classList.toggle('show',scrollY>400));
+  sto.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+  const tocItems=document.querySelectorAll('.toc-item');
+  const chs=document.querySelectorAll('[id^="ch"].chapter');
+  let sup=null;
+  const co=new IntersectionObserver(es=>{if(sup)return;es.forEach(e=>{if(e.isIntersecting){tocItems.forEach(t=>t.classList.toggle('active',t.querySelector('a').getAttribute('href')==='#'+e.target.id));}});},{threshold:0.1,rootMargin:'-10% 0px -70% 0px'});
+  chs.forEach(c=>co.observe(c));
+  document.querySelectorAll('.toc-item a').forEach(a=>{a.addEventListener('click',()=>{tocItems.forEach(t=>t.classList.toggle('active',t.querySelector('a')===a));clearTimeout(sup);sup=setTimeout(()=>sup=null,900);});});
+  document.addEventListener('contextmenu',e=>e.preventDefault());
+<\/script>
+</body>
+</html>`;
+      }
+
+      function renderBlockHTML(block, characters, accent) {
+        // Build a lookup map: id -> character
+        const charMap = {};
+        (characters || []).forEach(c => charMap[c.id] = c);
+
+        if (block.type === "narrator") {
+          return `  <div class="panel fade-in"><div class="narrator">${nl2br(escHtml(block.text || ""))}</div></div>`;
+        }
+        if (block.type === "monologue") {
+          return `  <div class="panel fade-in"><div class="monologue">${nl2br(escHtml(block.text || ""))}</div></div>`;
+        }
+        if (block.type === "quote") {
+          return `  <div class="quote-card fade-in"><p>${nl2br(escHtml(block.text || ""))}</p></div>`;
+        }
+        if (block.type === "dialogue") {
+          const char = charMap[block.speaker] || characters[0] || { name: "?", color: "#eee", side: "left" };
+          const name = char.name || "?";
+          const isRight = char.side === "right";
+          const rev = isRight ? "rev" : "";
+          const bubbleCls = isRight ? "b" : "a";
+          const initials = name.slice(-1) || "?";
+          const thought = block.thought ? `<span class="thought">${escHtml(block.thought)}</span>` : "";
+          return `  <div class="panel fade-in">
+    <div class="dialogue-row ${rev}">
+      <div class="avatar" style="background:${char.color}">${initials}</div>
+      <div class="bwrap">
+        <div class="bname">${escHtml(name)}</div>
+        <div class="bubble ${bubbleCls}" style="background:${char.color}">${nl2br(escHtml(block.text || ""))}${thought}</div>
+      </div>
+    </div>
+  </div>`;
+        }
+        if (block.type === "phone") {
+          const msgs = (block.messages || [])
+            .map((m) => {
+              const msgChar = charMap[m.charId] || (m.side === "right" ? (characters[0] || {side:"right"}) : (characters[1] || characters[0] || {side:"left"}));
+              const isRight = msgChar.side === "right";
+              const cls = isRight ? "right" : "";
+              return `    <div class="msg-row ${cls}"><div class="msg-bubble ${isRight ? "right" : "left"}">${nl2br(escHtml(m.text || ""))}</div></div>`;
+            })
+            .join("\n");
+          return `  <div class="panel fade-in">
+    <div class="phone-chat">
+      <div class="phone-header">${escHtml(block.header || "—— 微信消息 ——")}</div>
+${msgs}
+    </div>
+  </div>`;
+        }
+        if (block.type === "timestamp") {
+          const parts = [block.time, block.place].filter(Boolean);
+          const text = parts.join(" · ") || "";
+          return `  <div class="timestamp-bar fade-in"><span class="ts-dot">●</span><span class="ts-text">${escHtml(text)}</span></div>`;
+        }
+        return "";
+      }
+
+      // ===== PREVIEW =====
+      let previewDebounce = null;
+      let _previewScrollTop = 0;
+
+      function renderPreview() {
+        clearTimeout(previewDebounce);
+        previewDebounce = setTimeout(() => {
+          const newHtml = generateHTML();
+          const frame = document.getElementById("preview-frame");
+          // Save scroll position before update
+          try {
+            if (frame.contentWindow && frame.contentDocument && frame.contentDocument.documentElement) {
+              _previewScrollTop = frame.contentWindow.scrollY || 0;
+            }
+          } catch(e) {}
+          // Listen for load to restore scroll
+          frame.onload = () => {
+            try {
+              if (_previewScrollTop > 0) {
+                frame.contentWindow.scrollTo(0, _previewScrollTop);
+              }
+            } catch(e) {}
+            frame.onload = null;
+          };
+          frame.srcdoc = newHtml;
+        }, 300);
+      }
+
+      // ===== EXPORT =====
+      function exportHTML() {
+        readFormToStory();
+        const html = generateHTML();
+        const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = (story.title || "story") + ".html";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      // ===== TAB SWITCH (mobile) =====
+      function switchTab(tab) {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        const activeBtn = document.getElementById("tab-" + tab);
+        if (activeBtn) activeBtn.classList.add("active");
+        if (window.innerWidth <= 768) {
+          ["editor-panel","preview-panel","library-panel"].forEach(id => {
+            document.getElementById(id).classList.remove("mobile-active");
+          });
+          const panelMap = { editor: "editor-panel", preview: "preview-panel", library: "library-panel" };
+          const target = document.getElementById(panelMap[tab]);
+          if (target) target.classList.add("mobile-active");
+          if (tab === "preview") renderPreview();
+          if (tab === "library") renderLibrary();
+        }
+      }
+
+      // ===== UTILS =====
+      function escHtml(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+      function nl2br(s) {
+        return s.replace(/\n/g, "<br>");
+      }
+      function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
+
+      // ===== STORY LIBRARY =====
+      let completedStories = [];
+      let activeStoryId = null;
+
+      function completeStory() {
+        readFormToStory();
+        if (!story.title || story.title.trim() === "") {
+          alert("请先填写故事标题再保存");
+          return;
+        }
+        completedStories = loadLibrary();
+        const now = new Date().toLocaleDateString("zh-CN");
+        if (activeStoryId) {
+          // Update existing record in-place
+          const idx = completedStories.findIndex(s => s.id === activeStoryId);
+          if (idx !== -1) {
+            completedStories[idx] = {
+              ...completedStories[idx],
+              title: story.title,
+              tag: story.tag,
+              savedAt: now,
+              story: JSON.parse(JSON.stringify(story))
+            };
+            saveLibrary(completedStories);
+            renderLibrary();
+            showSaveFeedback("✓ 已更新！");
+            return;
+          }
+        }
+        // New record
+        const saved = {
+          id: Date.now(),
+          title: story.title,
+          tag: story.tag,
+          savedAt: now,
+          story: JSON.parse(JSON.stringify(story))
+        };
+        completedStories.unshift(saved);
+        saveLibrary(completedStories);
+        activeStoryId = saved.id;
+        renderLibrary();
+        showSaveFeedback("✓ 已保存！");
+      }
+
+      function showSaveFeedback(msg) {
+        const btn = document.querySelector(".btn-complete");
+        if (!btn) return;
+        const orig = btn.textContent;
+        btn.textContent = msg;
+        btn.style.background = "#5a8d6a";
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.style.background = "";
+        }, 1800);
+      }
+
+      function newStory() {
+        if (!confirm("新建故事将清空当前编辑内容，确认？")) return;
+        story = {
+          title: "新故事",
+          subtitle: "",
+          tag: "图文故事",
+          ending: "愿每个人都能拥有自己真正想要的生活",
+          characters: [
+            { id: "c0", name: "主角", color: "#E0F0E4", side: "left" },
+            { id: "c1", name: "配角", color: "#FFF0E8", side: "right" }
+          ],
+          accent: "#C07858",
+          bg: "#F7F3EE",
+          chapters: [{ title: "第一章", numeral: "一", blocks: [] }],
+        };
+        activeStoryId = null;
+        _charIdCounter = 2;
+        syncFormToStory();
+        renderChaptersList();
+        renderPreview();
+        saveToStorage();
+        renderLibrary();
+      }
+
+      function renderLibrary() {
+        completedStories = loadLibrary();
+        const scroll = document.getElementById("library-scroll");
+        const countEl = document.getElementById("library-count");
+        if (!scroll) return;
+        countEl.textContent = completedStories.length + " 篇";
+        if (completedStories.length === 0) {
+          scroll.innerHTML = '<div class="library-empty">还没有完成的故事<br>点击「完成」保存当前故事</div>';
+          return;
+        }
+        scroll.innerHTML = completedStories.map(s => `
+          <div class="story-item${s.id === activeStoryId ? " active" : ""}" id="si-${s.id}" onclick="loadStoryFromLibrary(${s.id})">
+            <div class="story-item-title">${escHtml(s.title)}</div>
+            <div class="story-item-meta">
+              <span>${escHtml(s.tag || "")} · ${s.savedAt}</span>
+              <button class="story-item-del" onclick="event.stopPropagation();deleteFromLibrary(${s.id})" title="删除">✕</button>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function loadStoryFromLibrary(id) {
+        completedStories = loadLibrary();
+        const found = completedStories.find(s => s.id === id);
+        if (!found) return;
+        Object.assign(story, migrateStory(JSON.parse(JSON.stringify(found.story))));
+        syncFormToStory();
+        renderChaptersList();
+        renderPreview();
+        saveToStorage();
+        activeStoryId = id;
+        renderLibrary();
+        // On mobile, switch to editor view to show the loaded story
+        if (window.innerWidth <= 768) {
+          switchTabById("editor");
+        }
+      }
+
+      function deleteFromLibrary(id) {
+        if (!confirm("确认删除这篇故事？")) return;
+        completedStories = loadLibrary();
+        completedStories = completedStories.filter(s => s.id !== id);
+        saveLibrary(completedStories);
+        if (activeStoryId === id) activeStoryId = null;
+        renderLibrary();
+      }
+
+      function switchTabById(tab) {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        const activeBtn = document.getElementById("tab-" + tab);
+        if (activeBtn) activeBtn.classList.add("active");
+        if (window.innerWidth <= 768) {
+          ["editor-panel","preview-panel","library-panel"].forEach(id => {
+            document.getElementById(id).classList.remove("mobile-active");
+          });
+          const panelMap = { editor: "editor-panel", preview: "preview-panel", library: "library-panel" };
+          const target = document.getElementById(panelMap[tab]);
+          if (target) target.classList.add("mobile-active");
+        }
+      }
+
+      // ===== START =====
+      init();
+    </script>
+  </body>
+</html>
