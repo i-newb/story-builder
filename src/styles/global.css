@@ -1,0 +1,124 @@
+:root {
+  --bg: #f4f0eb;
+  --surface: #ffffff;
+  --border: #d8d0c8;
+  --ink: #2a2825;
+  --ink-2: #6b6460;
+  --accent: #c07858;
+  --accent-soft: #eeddd5;
+  --green: #7ead88;
+  --green-soft: #e0f0e4;
+  --sidebar-w: 380px;
+  --preview-font: "Noto Sans SC", sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: "Noto Sans SC", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Shared button styles */
+.btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: "Noto Sans SC", sans-serif;
+  transition: all 0.18s;
+}
+.btn-ghost {
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--ink-2);
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(192, 120, 88, 0.25);
+}
+.btn-primary:hover {
+  background: #b06848;
+}
+
+/* Shared input styles */
+.mini-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: "Noto Sans SC", sans-serif;
+  background: #fafaf8;
+  color: var(--ink);
+}
+.mini-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.mini-textarea {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: "Noto Sans SC", sans-serif;
+  background: #fafaf8;
+  color: var(--ink);
+  min-height: 54px;
+  resize: vertical;
+}
+.mini-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.mini-label {
+  font-size: 11px;
+  color: var(--ink-2);
+  margin-bottom: 3px;
+  display: block;
+}
+.block-select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: "Noto Sans SC", sans-serif;
+  background: #fafaf8;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.block-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 100%; }
+  body { overflow: hidden; }
+}
