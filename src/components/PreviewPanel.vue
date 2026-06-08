@@ -32,11 +32,11 @@ function renderPreview() {
       if (frame.contentWindow && frame.contentDocument?.documentElement) {
         savedScrollTop = frame.contentWindow.scrollY || 0
       }
-    } catch (e) {}
+    } catch (e) { }
     frame.onload = () => {
       try {
         if (savedScrollTop > 0) frame.contentWindow.scrollTo(0, savedScrollTop)
-      } catch (e) {}
+      } catch (e) { }
       frame.onload = null
     }
     frame.srcdoc = newHtml
@@ -44,59 +44,84 @@ function renderPreview() {
 }
 
 // Watch story changes
-watch(() => store.story, () => renderPreview(), { deep: true })
+watch(() => store.story, (val) => {
+}, { deep: true })
 
 // Watch manual refresh trigger
-watch(() => props.refreshTrigger, () => renderPreview())
+watch(() => props.refreshTrigger, (val) => {
+  renderPreview()
+})
 
-onMounted(() => renderPreview())
+onMounted(() => {
+  renderPreview()
+})
 
 defineExpose({ renderPreview })
 </script>
 
 <style scoped>
-.preview-panel {
-  flex: 1;
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow: hidden;
-}
-.preview-label {
-  padding: 8px 0 4px;
-  font-size: 11px;
-  color: var(--ink-2);
-  letter-spacing: 1px;
-  flex-shrink: 0;
-  font-family: "ZCOOL KuaiLe", cursive;
-}
-.preview-frame-wrap {
-  flex: 1;
-  overflow-y: auto;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  padding: 0 12px 12px;
-}
-#preview-frame {
-  width: 480px;
-  min-width: 480px;
-  border: none;
-  border-radius: 8px;
-  height: 100%;
-  min-height: 500px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-  background: #fff;
-}
+  .preview-panel {
+    flex: 1;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+  }
 
-@media (max-width: 768px) {
-  .preview-panel { width: 100%; display: none; height: calc(100vh - 52px); }
-  .preview-panel.mobile-active { display: flex; }
-  #preview-frame { width: calc(100vw - 24px); min-width: unset; }
-  .preview-frame-wrap { padding: 12px 0; }
-}
-@media (min-width: 769px) {
-  .preview-panel { display: flex !important; }
-}
+  .preview-label {
+    padding: 8px 0 4px;
+    font-size: 11px;
+    color: var(--ink-2);
+    letter-spacing: 1px;
+    flex-shrink: 0;
+    font-family: "ZCOOL KuaiLe", cursive;
+  }
+
+  .preview-frame-wrap {
+    flex: 1;
+    overflow-y: auto;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 0 12px 12px;
+  }
+
+  #preview-frame {
+    width: 480px;
+    min-width: 480px;
+    border: none;
+    border-radius: 8px;
+    height: 100%;
+    min-height: 500px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+    background: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .preview-panel {
+      width: 100%;
+      display: none;
+      height: calc(100vh - 52px);
+    }
+
+    .preview-panel.mobile-active {
+      display: flex;
+    }
+
+    #preview-frame {
+      width: calc(100vw - 24px);
+      min-width: unset;
+    }
+
+    .preview-frame-wrap {
+      padding: 12px 0;
+    }
+  }
+
+  @media (min-width: 769px) {
+    .preview-panel {
+      display: flex !important;
+    }
+  }
 </style>
