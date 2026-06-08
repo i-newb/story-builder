@@ -45,11 +45,12 @@ function renderPreview() {
 
 // Watch story changes
 watch(() => store.story, (val) => {
+  renderPreview()
 }, { deep: true })
 
 // Watch manual refresh trigger
 watch(() => props.refreshTrigger, (val) => {
-  renderPreview()
+  
 })
 
 onMounted(() => {
