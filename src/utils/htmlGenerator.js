@@ -2,87 +2,103 @@ import { escHtml, nl2br, hexToRgba, NUMERALS } from './index.js'
 
 function renderBlockHTML(block, characters, accent) {
   const charMap = {}
-  ;(characters || []).forEach(c => (charMap[c.id] = c))
+  ;(characters || []).forEach(char => {
+    charMap[char.id] = char
+  })
 
   if (block.type === 'narrator') {
     return `  <div class="panel fade-in"><div class="narrator">${nl2br(escHtml(block.text || ''))}</div></div>`
   }
+
   if (block.type === 'monologue') {
     return `  <div class="panel fade-in"><div class="monologue">${nl2br(escHtml(block.text || ''))}</div></div>`
   }
+
   if (block.type === 'quote') {
     return `  <div class="quote-card fade-in"><p>${nl2br(escHtml(block.text || ''))}</p></div>`
   }
+
   if (block.type === 'dialogue') {
-    const char = charMap[block.speaker] || characters[0] || { name: '?', color: '#eee', side: 'left' }
+    const char = charMap[block.speaker] || characters?.[0] || { name: '?', color: '#eee', side: 'left' }
     const name = char.name || '?'
     const isRight = char.side === 'right'
-    const rev = isRight ? 'rev' : ''
-    const bubbleCls = isRight ? 'b' : 'a'
-    const initials = name.slice(-1) || '?'
     const thought = block.thought ? `<span class="thought">${escHtml(block.thought)}</span>` : ''
+
     return `  <div class="panel fade-in">
-    <div class="dialogue-row ${rev}">
-      <div class="avatar" style="background:${char.color}">${initials}</div>
+    <div class="dialogue-row ${isRight ? 'rev' : ''}">
+      <div class="avatar" style="background:${char.color}">${escHtml(name.slice(-1) || '?')}</div>
       <div class="bwrap">
         <div class="bname">${escHtml(name)}</div>
-        <div class="bubble ${bubbleCls}" style="background:${char.color}">${nl2br(escHtml(block.text || ''))}${thought}</div>
+        <div class="bubble ${isRight ? 'b' : 'a'}" style="background:${char.color}">${nl2br(escHtml(block.text || ''))}${thought}</div>
       </div>
     </div>
   </div>`
   }
+
   if (block.type === 'phone') {
-    const msgs = (block.messages || [])
-      .map(m => {
-        const msgChar = charMap[m.charId] || (m.side === 'right' ? characters[0] || { side: 'right' } : characters[1] || characters[0] || { side: 'left' })
-        const isRight = msgChar.side === 'right'
-        const cls = isRight ? 'right' : ''
-        return `    <div class="msg-row ${cls}"><div class="msg-bubble ${isRight ? 'right' : 'left'}">${nl2br(escHtml(m.text || ''))}</div></div>`
+    const messages = (block.messages || [])
+      .map(message => {
+        const msgChar = charMap[message.charId] || characters?.[0] || { side: 'left' }
+        const isRight = msgChar.side === 'right' || message.side === 'right'
+        return `    <div class="msg-row ${isRight ? 'right' : ''}"><div class="msg-bubble ${isRight ? 'right' : 'left'}">${nl2br(escHtml(message.text || ''))}</div></div>`
       })
       .join('\n')
+
     return `  <div class="panel fade-in">
     <div class="phone-chat">
-      <div class="phone-header">${escHtml(block.header || '—— 微信消息 ——')}</div>
-${msgs}
+      <div class="phone-header">${escHtml(block.header || '-- 微信消息 --')}</div>
+${messages}
     </div>
   </div>`
   }
+
   if (block.type === 'timestamp') {
-    const parts = [block.time, block.place].filter(Boolean)
-    const text = parts.join(' · ') || ''
+    const text = [block.time, block.place].filter(Boolean).join(' · ')
     return `  <div class="timestamp-bar fade-in"><span class="ts-dot">●</span><span class="ts-text">${escHtml(text)}</span></div>`
   }
+
   if (block.type === 'illustration') {
     if (!block.svg) return ''
     return `  <div class="illus-block fade-in">${block.svg}</div>`
   }
+
   return ''
 }
 
 export function generateHTML(story) {
-  const { title, subtitle, tag, ending, characters, accent, bg, chapters } = story
-  const accentHex = accent
+  const {
+    title = '',
+    subtitle = '',
+    tag = '',
+    ending = '',
+    characters = [],
+    accent = '#C07858',
+    bg = '#F7F3EE',
+    chapters = [],
+  } = story
+
   const accentSoft = hexToRgba(accent, 0.15)
-  const charColorVars = (characters || []).map((c, i) => `  --char-color-${i}: ${c.color};`).join('\n')
+  const charColorVars = characters.map((char, index) => `  --char-color-${index}: ${char.color};`).join('\n')
 
   const chaptersHTML = chapters
-    .map((ch, ci) => {
-      const num = ch.numeral || NUMERALS[ci] || String(ci + 1)
-      const blocksHTML = ch.blocks.map(block => renderBlockHTML(block, characters, accent)).join('\n')
+    .map((chapter, chapterIndex) => {
+      const number = chapter.numeral || NUMERALS[chapterIndex] || String(chapterIndex + 1)
+      const blocksHTML = (chapter.blocks || []).map(block => renderBlockHTML(block, characters, accent)).join('\n')
+
       return `
-  <div class="chapter fade-in" id="ch${ci}">
-    <div class="chapter-num">${num}</div>
+  <div class="chapter fade-in" id="ch${chapterIndex}">
+    <div class="chapter-num">${escHtml(number)}</div>
     <div class="chapter-line"></div>
-    <div class="chapter-title">${escHtml(ch.title)}</div>
+    <div class="chapter-title">${escHtml(chapter.title)}</div>
   </div>
   ${blocksHTML}`
     })
     .join('\n')
 
   const tocItems = chapters
-    .map((ch, ci) => {
-      const num = ch.numeral || NUMERALS[ci] || String(ci + 1)
-      return `<li class="toc-item${ci === 0 ? ' active' : ''}"><a href="#ch${ci}"><span class="toc-num">${num}</span><span class="toc-label">${escHtml(ch.title)}</span></a></li>`
+    .map((chapter, chapterIndex) => {
+      const number = chapter.numeral || NUMERALS[chapterIndex] || String(chapterIndex + 1)
+      return `<li class="toc-item${chapterIndex === 0 ? ' active' : ''}"><a href="#ch${chapterIndex}"><span class="toc-num">${escHtml(number)}</span><span class="toc-label">${escHtml(chapter.title)}</span></a></li>`
     })
     .join('\n      ')
 
@@ -96,7 +112,7 @@ export function generateHTML(story) {
   @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
   :root {
     --bg: ${bg};
-    --accent: ${accentHex};
+    --accent: ${accent};
     --accent-soft: ${accentSoft};
     --a-color: ${(characters[0] || { color: '#E0F0E4' }).color};
     --b-color: ${(characters[1] || characters[0] || { color: '#FFF0E8' }).color};
@@ -108,11 +124,10 @@ ${charColorVars}
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   html { scroll-behavior:smooth; }
-  body { background:var(--bg); font-family:'Noto Sans SC',sans-serif; color:var(--ink); overflow-x:hidden; }
-  body { -webkit-user-select:none; user-select:none; }
+  body { background:var(--bg); font-family:'Noto Sans SC',sans-serif; color:var(--ink); overflow-x:hidden; -webkit-user-select:none; user-select:none; }
   .wrap { max-width:480px; margin:0 auto; padding:0 14px 80px; }
   .header { text-align:center; padding:48px 20px 36px; }
-  .header-tag { display:inline-block; font-family:'ZCOOL KuaiLe',cursive; font-size:11px; letter-spacing:3px; color:var(--accent); border:1.5px solid var(--accent); padding:3px 12px; border-radius:20px; margin-bottom:16px; opacity:0.7; }
+  .header-tag { display:inline-block; font-family:'ZCOOL KuaiLe',cursive; font-size:11px; letter-spacing:3px; color:var(--accent); border:1.5px solid var(--accent); padding:3px 12px; border-radius:20px; margin-bottom:16px; opacity:0.8; }
   .header h1 { font-family:'Ma Shan Zheng',cursive; font-size:40px; color:var(--ink); letter-spacing:6px; margin-bottom:10px; }
   .header h1 span { color:var(--accent); }
   .header .sub { font-family:'ZCOOL KuaiLe',cursive; font-size:13px; color:var(--ink-2); letter-spacing:2px; margin-bottom:14px; }
@@ -122,17 +137,16 @@ ${charColorVars}
   .chapter-line { flex:1; height:1.5px; background:linear-gradient(90deg,var(--accent),transparent); opacity:0.4; }
   .chapter-title { font-family:'ZCOOL KuaiLe',cursive; font-size:15px; color:var(--ink-2); letter-spacing:2px; flex-shrink:0; }
   .panel { background:var(--panel-bg); border:2px solid var(--border); border-radius:8px; margin-bottom:14px; overflow:hidden; box-shadow:3px 3px 0 rgba(0,0,0,0.07); }
-  .narrator { padding:14px 16px; font-size:13px; line-height:1.95; color:var(--ink-2); font-style:italic; background:linear-gradient(135deg,#FAFAF8,#F5F2EE); }
+  .narrator { padding:14px 16px; font-size:13px; line-height:1.95; color:var(--ink-2); font-style:italic; background:linear-gradient(135deg,#FAFAF8,#F5F2EE); white-space:normal; }
   .monologue { padding:16px 18px; border-left:3px solid var(--accent); background:linear-gradient(135deg,rgba(255,255,255,0.8),var(--bg)); font-size:13px; line-height:1.9; font-style:italic; }
-  .monologue strong { font-style:normal; color:var(--accent); }
   .dialogue-row { display:flex; gap:10px; padding:14px; align-items:flex-start; }
   .dialogue-row.rev { flex-direction:row-reverse; }
   .avatar { width:38px; height:38px; border-radius:50%; flex-shrink:0; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--ink-2); }
   .bwrap { max-width:75%; }
   .bname { font-size:11px; font-weight:700; color:var(--ink-2); margin-bottom:4px; }
   .bubble { padding:10px 14px; border-radius:16px; font-size:13.5px; line-height:1.75; word-break:break-word; }
-  .bubble.a { background:var(--a-color); border:1.5px solid rgba(0,0,0,0.08); border-bottom-left-radius:4px; }
-  .bubble.b { background:var(--b-color); border:1.5px solid rgba(0,0,0,0.08); border-bottom-right-radius:4px; }
+  .bubble.a { border:1.5px solid rgba(0,0,0,0.08); border-bottom-left-radius:4px; }
+  .bubble.b { border:1.5px solid rgba(0,0,0,0.08); border-bottom-right-radius:4px; }
   .thought { font-size:11px; color:var(--ink-2); font-style:italic; display:block; margin-top:6px; border-top:1px dashed rgba(0,0,0,0.1); padding-top:6px; }
   .phone-chat { padding:14px; background:#EDEDED; }
   .phone-header { text-align:center; font-size:11px; color:#888; margin-bottom:12px; font-family:'ZCOOL KuaiLe',cursive; }
@@ -143,19 +157,17 @@ ${charColorVars}
   .msg-bubble.right { background:#9FD280; border-radius:12px 4px 12px 12px; color:#1a3d0a; }
   .timestamp-bar { display:flex; align-items:center; justify-content:center; gap:7px; margin:18px 0 10px; }
   .ts-dot { font-size:7px; color:#F5C842; line-height:1; flex-shrink:0; text-shadow:0 0 4px rgba(245,200,66,0.5); }
-  .ts-text { display:inline-block; background:#FFFBEC; border:1px solid #F0E0A0; border-radius:20px; padding:4px 14px; font-size:11.5px; color:#7A6020; letter-spacing:0.5px; font-family:'Noto Sans SC',sans-serif; }
+  .ts-text { display:inline-block; background:#FFFBEC; border:1px solid #F0E0A0; border-radius:20px; padding:4px 14px; font-size:11.5px; color:#7A6020; letter-spacing:0.5px; }
   .illus-block { margin-bottom:14px; border-radius:10px; overflow:hidden; border:2px solid var(--border); box-shadow:3px 3px 0 rgba(0,0,0,0.07); background:var(--panel-bg); line-height:0; }
-  .illus-block svg { width:100%; height:auto; display:block; }
+  .illus-block svg, .illus-block img { width:100%; height:auto; display:block; }
   .quote-card { background:var(--ink); border-radius:8px; padding:24px 20px; margin-bottom:14px; box-shadow:3px 3px 0 rgba(0,0,0,0.15); position:relative; overflow:hidden; }
   .quote-card::before { content:'"'; position:absolute; top:-10px; left:10px; font-family:'Ma Shan Zheng',cursive; font-size:100px; color:rgba(255,255,255,0.06); line-height:1; }
   .quote-card p { font-size:13.5px; line-height:1.9; color:#EEE8E0; position:relative; z-index:1; white-space:pre-line; }
-  .quote-card p strong { color:#F2C879; }
   .end-card { text-align:center; padding:40px 20px; background:var(--panel-bg); border:2px solid var(--border); border-radius:8px; margin-top:32px; box-shadow:3px 3px 0 rgba(0,0,0,0.07); }
   .end-hearts { font-size:20px; letter-spacing:6px; margin-bottom:12px; color:var(--accent); }
   .end-sub { font-size:12px; color:var(--ink-2); line-height:2; }
   .fade-in { opacity:0; transform:translateY(14px); transition:opacity 0.6s ease,transform 0.6s ease; }
   .fade-in.visible { opacity:1; transform:translateY(0); }
-  .status { position:fixed; bottom:0; left:0; right:0; background:rgba(247,243,238,0.92); backdrop-filter:blur(8px); border-top:1px solid rgba(0,0,0,0.1); padding:7px 16px; font-size:11px; color:var(--ink-2); text-align:center; z-index:100; }
   .toc { display:none; position:fixed; right:24px; top:50%; transform:translateY(-50%); z-index:200; }
   @media(min-width:900px){ .toc{display:block;} }
   .toc-inner { background:var(--panel-bg); border:1.5px solid var(--border); border-radius:8px; padding:14px 10px; box-shadow:3px 3px 0 rgba(0,0,0,0.07); min-width:110px; }
@@ -184,7 +196,7 @@ ${charColorVars}
 ${chaptersHTML}
 
   <div class="end-card fade-in">
-    <div class="end-hearts">♡ ♡ ♡</div>
+    <div class="end-hearts">♥ ♥ ♥</div>
     <div class="end-sub">${nl2br(escHtml(ending))}</div>
   </div>
 </div>
@@ -201,18 +213,35 @@ ${chaptersHTML}
 <button id="sto" title="回到顶部">↑</button>
 
 <script>
-  const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:0.1});
-  document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
-  const sto=document.getElementById('sto');
-  window.addEventListener('scroll',()=>sto.classList.toggle('show',scrollY>300));
-  sto.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
-  const tocItems=document.querySelectorAll('.toc-item');
-  const chs=document.querySelectorAll('[id^="ch"].chapter');
-  let sup=null;
-  const co=new IntersectionObserver(es=>{if(sup)return;es.forEach(e=>{if(e.isIntersecting){tocItems.forEach(t=>t.classList.toggle('active',t.querySelector('a').getAttribute('href')==='#'+e.target.id));}});},{threshold:0.1,rootMargin:'-10% 0px -70% 0px'});
-  chs.forEach(c=>co.observe(c));
-  document.querySelectorAll('.toc-item a').forEach(a=>{a.addEventListener('click',()=>{tocItems.forEach(t=>t.classList.toggle('active',t.querySelector('a')===a));clearTimeout(sup);sup=setTimeout(()=>sup=null,900);});});
-  document.addEventListener('contextmenu',e=>e.preventDefault());
+  const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible')
+  }), { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(element => observer.observe(element));
+
+  const scrollTopButton = document.getElementById('sto');
+  window.addEventListener('scroll', () => scrollTopButton.classList.toggle('show', scrollY > 300));
+  scrollTopButton.addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+
+  const tocItems = document.querySelectorAll('.toc-item');
+  const chapters = document.querySelectorAll('[id^="ch"].chapter');
+  let suppressAutoToc = null;
+  const chapterObserver = new IntersectionObserver(entries => {
+    if (suppressAutoToc) return;
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        tocItems.forEach(item => item.classList.toggle('active', item.querySelector('a').getAttribute('href') === '#' + entry.target.id));
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '-10% 0px -70% 0px' });
+  chapters.forEach(chapter => chapterObserver.observe(chapter));
+  document.querySelectorAll('.toc-item a').forEach(anchor => {
+    anchor.addEventListener('click', () => {
+      tocItems.forEach(item => item.classList.toggle('active', item.querySelector('a') === anchor));
+      clearTimeout(suppressAutoToc);
+      suppressAutoToc = setTimeout(() => suppressAutoToc = null, 900);
+    });
+  });
+  document.addEventListener('contextmenu', event => event.preventDefault());
 <\/script>
 </body>
 </html>`

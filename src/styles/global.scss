@@ -10,6 +10,15 @@
   --green-soft: #e0f0e4;
   --sidebar-w: 380px;
   --preview-font: "Noto Sans SC", sans-serif;
+
+  --el-color-primary: var(--accent);
+  --el-color-primary-light-3: #cf967c;
+  --el-color-primary-light-5: #dcb39f;
+  --el-color-primary-light-7: #ead0c4;
+  --el-color-primary-light-9: #f7ede8;
+  --el-color-primary-dark-2: #9d5f43;
+  --el-border-radius-base: 6px;
+  --el-font-family: var(--preview-font);
 }
 
 * {
@@ -18,12 +27,14 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body,
+#app {
   height: 100%;
 }
 
 body {
-  font-family: "Noto Sans SC", sans-serif;
+  font-family: var(--preview-font);
   background: var(--bg);
   color: var(--ink);
   display: flex;
@@ -32,93 +43,101 @@ body {
   overflow: hidden;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
 
-/* Shared button styles */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
 .btn {
   padding: 6px 16px;
   border-radius: 6px;
   border: none;
   font-size: 13px;
   cursor: pointer;
-  font-family: "Noto Sans SC", sans-serif;
   transition: all 0.18s;
 }
+
 .btn-ghost {
   background: none;
   border: 1.5px solid var(--border);
   color: var(--ink-2);
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 }
-.btn-ghost:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
+
 .btn-primary {
   background: var(--accent);
   color: #fff;
   box-shadow: 0 2px 6px rgba(192, 120, 88, 0.25);
-}
-.btn-primary:hover {
-  background: #b06848;
+
+  &:hover {
+    background: #b06848;
+  }
 }
 
-/* Shared input styles */
+.mini-input,
+.mini-textarea,
+.block-select {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+  background: #fafaf8;
+  color: var(--ink);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+}
+
 .mini-input {
-  width: 100%;
   padding: 5px 8px;
-  border: 1.5px solid var(--border);
-  border-radius: 5px;
-  font-size: 12px;
-  font-family: "Noto Sans SC", sans-serif;
-  background: #fafaf8;
-  color: var(--ink);
 }
-.mini-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
+
 .mini-textarea {
-  width: 100%;
   padding: 5px 8px;
-  border: 1.5px solid var(--border);
-  border-radius: 5px;
-  font-size: 12px;
-  font-family: "Noto Sans SC", sans-serif;
-  background: #fafaf8;
-  color: var(--ink);
   min-height: 54px;
   resize: vertical;
 }
-.mini-textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-}
+
 .mini-label {
   font-size: 11px;
   color: var(--ink-2);
   margin-bottom: 3px;
   display: block;
 }
+
 .block-select {
-  width: 100%;
   padding: 5px 8px;
-  border: 1.5px solid var(--border);
-  border-radius: 5px;
-  font-size: 12px;
-  font-family: "Noto Sans SC", sans-serif;
-  background: #fafaf8;
-  color: var(--ink);
   margin-bottom: 6px;
 }
-.block-select:focus {
-  outline: none;
-  border-color: var(--accent);
+
+.el-button {
+  letter-spacing: 0;
 }
 
-/* Mobile */
 @media (max-width: 768px) {
-  :root { --sidebar-w: 100%; }
-  body { overflow: hidden; }
+  :root {
+    --sidebar-w: 100%;
+  }
+
+  body {
+    overflow: hidden;
+  }
 }

@@ -1,19 +1,20 @@
-export function escHtml(s) {
-  return String(s || '')
+export function escHtml(value) {
+  return String(value || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
 }
 
-export function nl2br(s) {
-  return String(s || '').replace(/\n/g, '<br>')
+export function nl2br(value) {
+  return String(value || '').replace(/\n/g, '<br>')
 }
 
 export function hexToRgba(hex, alpha) {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
+  const normalized = /^#[0-9a-f]{6}$/i.test(hex) ? hex : '#C07858'
+  const r = parseInt(normalized.slice(1, 3), 16)
+  const g = parseInt(normalized.slice(3, 5), 16)
+  const b = parseInt(normalized.slice(5, 7), 16)
   return `rgba(${r},${g},${b},${alpha})`
 }
 
@@ -46,10 +47,13 @@ export function getBlockPreview(block) {
   return (block.text || '').replace(/\n/g, ' ').slice(0, 30)
 }
 
-let _charIdCounter = 2
+let charIdCounter = 2
+
 export function newCharId() {
-  return 'c' + (++_charIdCounter + Date.now() % 10000)
+  charIdCounter += 1
+  return `c${charIdCounter + (Date.now() % 10000)}`
 }
-export function resetCharIdCounter(n = 2) {
-  _charIdCounter = n
+
+export function resetCharIdCounter(value = 2) {
+  charIdCounter = value
 }

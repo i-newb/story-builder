@@ -1,130 +1,138 @@
 <template>
   <div class="editor-panel" :class="{ 'mobile-active': isMobileActive }" id="editor-panel">
     <div class="editor-scroll">
-      <!-- META -->
-      <div class="section-group">
+      <AiStoryPanel />
+
+      <section class="section-group">
         <div class="section-title">基本信息</div>
-        <div class="field">
-          <label>故事标题</label>
-          <input type="text" v-model="story.title" placeholder="故事标题" @input="store.save()" />
-        </div>
-        <div class="field">
-          <label>副标题</label>
-          <input type="text" v-model="story.subtitle" placeholder="副标题" @input="store.save()" />
-        </div>
-        <div class="field">
-          <label>标签文字（小）</label>
-          <input type="text" v-model="story.tag" placeholder="如：图文故事、沸点记录" @input="store.save()" />
-        </div>
-        <div class="field">
-          <label>结尾寄语</label>
-          <textarea v-model="story.ending" placeholder="结尾文字…" @input="store.save()"></textarea>
-        </div>
-      </div>
+        <el-form label-position="top" size="small">
+          <el-form-item label="故事标题">
+            <el-input v-model="story.title" placeholder="故事标题" @input="store.save()" />
+          </el-form-item>
+          <el-form-item label="副标题">
+            <el-input v-model="story.subtitle" placeholder="副标题" @input="store.save()" />
+          </el-form-item>
+          <el-form-item label="标签文字">
+            <el-input v-model="story.tag" placeholder="例如：图文故事、泪点记录" @input="store.save()" />
+          </el-form-item>
+          <el-form-item label="结尾寄语">
+            <el-input v-model="story.ending" type="textarea" :rows="3" placeholder="结尾文字" @input="store.save()" />
+          </el-form-item>
+        </el-form>
+      </section>
 
-      <!-- CHARACTERS -->
-      <div class="section-group">
+      <section class="section-group">
         <div class="section-title">人物设置</div>
-        <div v-for="(char, ci) in story.characters" :key="char.id" class="char-row">
-          <div class="char-row-top">
-            <span class="char-index">{{ ci + 1 }}</span>
-            <input class="mini-input char-name-input" v-model="char.name" placeholder="角色名称" @input="store.save()" />
-            <input type="color" class="char-color-input" v-model="char.color" @input="store.save()" @change="store.save()" />
-            <select class="char-side-select" v-model="char.side" @change="store.save()">
-              <option value="left">左侧</option>
-              <option value="right">右侧</option>
-            </select>
-            <button v-if="story.characters.length > 1" class="char-del-btn" @click="store.deleteChar(ci)" title="删除角色">✕</button>
-          </div>
+        <div v-for="(char, index) in story.characters" :key="char.id" class="char-row">
+          <span class="char-index">{{ index + 1 }}</span>
+          <el-input v-model="char.name" size="small" placeholder="角色名称" @input="store.save()" />
+          <el-color-picker v-model="char.color" size="small" @change="store.save()" />
+          <el-select v-model="char.side" size="small" class="char-side" @change="store.save()">
+            <el-option label="左侧" value="left" />
+            <el-option label="右侧" value="right" />
+          </el-select>
+          <el-button
+            v-if="story.characters.length > 1"
+            text
+            type="danger"
+            size="small"
+            title="删除角色"
+            @click="store.deleteChar(index)"
+          >
+            删除
+          </el-button>
         </div>
-        <button class="add-chapter-btn" style="margin-top:6px;border-color:var(--green);color:var(--green)" @click="store.addChar()">＋ 添加角色</button>
-      </div>
+        <el-button class="wide-action" plain type="success" size="small" @click="store.addChar()">添加角色</el-button>
+      </section>
 
-      <!-- THEME -->
-      <div class="section-group">
+      <section class="section-group">
         <div class="section-title">主题配色</div>
         <div class="color-row">
-          <div class="color-field">
-            <label>主色调（标题/强调）</label>
-            <input type="color" v-model="story.accent" @input="store.save()" @change="store.save()" />
-          </div>
-          <div class="color-field">
-            <label>页面背景色</label>
-            <input type="color" v-model="story.bg" @input="store.save()" @change="store.save()" />
-          </div>
+          <label class="color-field">
+            <span>主色调</span>
+            <el-color-picker v-model="story.accent" @change="store.save()" />
+          </label>
+          <label class="color-field">
+            <span>页面背景</span>
+            <el-color-picker v-model="story.bg" @change="store.save()" />
+          </label>
         </div>
-      </div>
+      </section>
 
-      <!-- CHAPTERS -->
-      <div class="section-group">
+      <section class="section-group">
         <div class="section-title">章节内容</div>
         <div class="chapters-list">
           <ChapterCard
-            v-for="(chapter, ci) in story.chapters"
-            :key="ci"
+            v-for="(chapter, chapterIndex) in story.chapters"
+            :key="chapterIndex"
             :chapter="chapter"
-            :ci="ci"
+            :ci="chapterIndex"
             :characters="story.characters"
-            @delete="store.deleteChapter(ci)"
-            @update-title="(v) => { chapter.title = v; store.save() }"
-            @update-numeral="(v) => { chapter.numeral = v; store.save() }"
-            @add-block="store.addBlock(ci)"
-            @delete-block="(bi) => store.deleteBlock(ci, bi)"
-            @update-block="(bi, payload) => updateBlock(ci, bi, payload)"
-            @change-block-type="(bi, newType) => store.changeBlockType(ci, bi, newType)"
-            @add-phone-msg="(bi) => store.addPhoneMsg(ci, bi)"
-            @delete-phone-msg="(bi, mi) => store.deletePhoneMsg(ci, bi, mi)"
+            @delete="store.deleteChapter(chapterIndex)"
+            @update-title="value => { chapter.title = value; store.save() }"
+            @update-numeral="value => { chapter.numeral = value; store.save() }"
+            @add-block="store.addBlock(chapterIndex)"
+            @delete-block="blockIndex => store.deleteBlock(chapterIndex, blockIndex)"
+            @update-block="(blockIndex, payload) => updateBlock(chapterIndex, blockIndex, payload)"
+            @change-block-type="(blockIndex, newType) => store.changeBlockType(chapterIndex, blockIndex, newType)"
+            @add-phone-msg="blockIndex => store.addPhoneMsg(chapterIndex, blockIndex)"
+            @delete-phone-msg="(blockIndex, messageIndex) => store.deletePhoneMsg(chapterIndex, blockIndex, messageIndex)"
           />
         </div>
-        <button class="add-chapter-btn" @click="store.addChapter()">＋ 添加章节</button>
-      </div>
+        <el-button class="wide-action" plain type="primary" size="small" @click="store.addChapter()">添加章节</el-button>
+      </section>
     </div>
+
     <div class="editor-footer">
-      <button class="btn-complete" :style="saveBtnStyle" @click="handleComplete">{{ saveBtnText }}</button>
+      <el-button class="save-button" type="success" :style="saveBtnStyle" @click="handleComplete">
+        {{ saveBtnText }}
+      </el-button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useStoryStore } from '@/stores/storyStore.js'
+import AiStoryPanel from './AiStoryPanel.vue'
 import ChapterCard from './ChapterCard.vue'
 
-const props = defineProps({
+defineProps({
   isMobileActive: Boolean,
 })
 
 const store = useStoryStore()
 const story = computed(() => store.story)
 
-const saveBtnText = ref('✓ 完成，保存到故事库')
+const saveBtnText = ref('完成，保存到故事库')
 const saveBtnStyle = ref({})
 
 function handleComplete() {
   const result = store.completeStory()
-  if (result) {
-    saveBtnText.value = result
-    saveBtnStyle.value = { background: '#5a8d6a' }
-    setTimeout(() => {
-      saveBtnText.value = '✓ 完成，保存到故事库'
-      saveBtnStyle.value = {}
-    }, 1800)
-  }
+  if (!result) return
+
+  saveBtnText.value = result
+  saveBtnStyle.value = { background: '#5a8d6a', borderColor: '#5a8d6a' }
+  setTimeout(() => {
+    saveBtnText.value = '完成，保存到故事库'
+    saveBtnStyle.value = {}
+  }, 1800)
 }
 
-function updateBlock(ci, bi, { key, value }) {
-  // Handle nested keys like "messages.0.text"
+function updateBlock(chapterIndex, blockIndex, { key, value }) {
   const parts = key.split('.')
-  let obj = story.value.chapters[ci].blocks[bi]
-  for (let i = 0; i < parts.length - 1; i++) {
-    obj = obj[parts[i]]
+  let target = story.value.chapters[chapterIndex].blocks[blockIndex]
+
+  for (let index = 0; index < parts.length - 1; index += 1) {
+    target = target[parts[index]]
   }
-  obj[parts[parts.length - 1]] = value
+
+  target[parts[parts.length - 1]] = value
   store.save()
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .editor-panel {
   width: var(--sidebar-w);
   flex-shrink: 0;
@@ -134,12 +142,21 @@ function updateBlock(ci, bi, { key, value }) {
   flex-direction: column;
   overflow: hidden;
 }
+
 .editor-scroll {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
 }
-.section-group { margin-bottom: 24px; }
+
+.section-group {
+  margin-bottom: 24px;
+
+  :deep(.el-form-item) {
+    margin-bottom: 12px;
+  }
+}
+
 .section-title {
   font-family: "ZCOOL KuaiLe", cursive;
   font-size: 12px;
@@ -149,57 +166,110 @@ function updateBlock(ci, bi, { key, value }) {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-.section-title::after { content: ""; flex: 1; height: 1px; background: var(--accent-soft); }
-.field { margin-bottom: 12px; }
-.field label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; font-weight: 500; }
-.field input, .field textarea, .field select {
-  width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 6px;
-  font-size: 13px; font-family: "Noto Sans SC", sans-serif; color: var(--ink);
-  background: #fafaf8; transition: border-color 0.2s; resize: vertical;
-}
-.field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent); }
-.field textarea { min-height: 72px; }
 
-.color-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.color-field label { font-size: 11.5px; color: var(--ink-2); display: block; margin-bottom: 4px; }
-.color-field input[type="color"] {
-  width: 100%; height: 36px; border: 1.5px solid var(--border);
-  border-radius: 6px; cursor: pointer; padding: 2px 4px; background: #fafaf8;
+  &::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--accent-soft);
+  }
 }
 
-.char-row { border: 1.5px solid var(--border); border-radius: 7px; background: #fafaf8; margin-bottom: 7px; overflow: hidden; }
-.char-row-top { display: flex; align-items: center; gap: 7px; padding: 8px 10px; }
-.char-index { font-family: "Ma Shan Zheng", cursive; font-size: 16px; color: var(--accent); flex-shrink: 0; width: 16px; text-align: center; }
-.char-name-input { flex: 1; min-width: 0; }
-.char-color-input { width: 32px; height: 28px; border: 1.5px solid var(--border); border-radius: 5px; padding: 2px; cursor: pointer; background: #fafaf8; flex-shrink: 0; }
-.char-side-select { width: 58px; padding: 4px 4px; border: 1.5px solid var(--border); border-radius: 5px; font-size: 11px; font-family: "Noto Sans SC", sans-serif; background: #fafaf8; color: var(--ink); flex-shrink: 0; }
-.char-side-select:focus { outline: none; border-color: var(--accent); }
-.char-del-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 13px; padding: 0 2px; flex-shrink: 0; transition: color 0.2s; }
-.char-del-btn:hover { color: #e8636f; }
-
-.chapters-list { display: flex; flex-direction: column; gap: 8px; }
-.add-chapter-btn {
-  width: 100%; padding: 8px; border: 1.5px dashed var(--accent-soft); border-radius: 8px;
-  background: none; font-size: 13px; color: var(--accent); cursor: pointer;
-  font-family: "ZCOOL KuaiLe", cursive; letter-spacing: 2px; transition: all 0.2s; margin-top: 4px;
+.char-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 36px 72px auto;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  background: #fafaf8;
+  margin-bottom: 7px;
 }
-.add-chapter-btn:hover { background: var(--accent-soft); }
 
-.editor-footer { padding: 12px 16px; border-top: 1.5px solid var(--border); flex-shrink: 0; }
-.btn-complete {
-  width: 100%; padding: 9px; border-radius: 7px; border: none;
-  background: var(--green); color: #fff; font-size: 13px;
-  font-family: "ZCOOL KuaiLe", cursive; letter-spacing: 2px; cursor: pointer;
-  transition: background 0.18s; box-shadow: 0 2px 6px rgba(126,173,136,0.3);
+.char-index {
+  font-family: "Ma Shan Zheng", cursive;
+  font-size: 16px;
+  color: var(--accent);
+  text-align: center;
 }
-.btn-complete:hover { background: #6a9d74; }
+
+.char-side {
+  width: 72px;
+}
+
+.wide-action {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.color-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.color-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  background: #fafaf8;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.chapters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editor-footer {
+  padding: 12px 16px;
+  border-top: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.save-button {
+  width: 100%;
+}
 
 @media (max-width: 768px) {
-  .editor-panel { width: 100%; border-right: none; border-bottom: 1.5px solid var(--border); display: none; height: calc(100vh - 52px); max-height: none; }
-  .editor-panel.mobile-active { display: flex; }
+  .editor-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1.5px solid var(--border);
+    display: none;
+    height: calc(100vh - 52px);
+    max-height: none;
+  }
+
+  .editor-panel.mobile-active {
+    display: flex;
+  }
 }
+
+@media (max-width: 520px) {
+  .char-row {
+    grid-template-columns: 20px minmax(0, 1fr) 36px 72px;
+
+    .el-button {
+      grid-column: 2 / -1;
+      justify-self: end;
+    }
+  }
+
+  .color-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (min-width: 769px) {
-  .editor-panel { display: flex !important; }
+  .editor-panel {
+    display: flex !important;
+  }
 }
 </style>
