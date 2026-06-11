@@ -1,6 +1,9 @@
 <template>
   <section class="ai-panel">
-    <div class="section-title">AI 自动生成</div>
+    <div class="section-title">
+      <span>AI 自动生成</span>
+      <span class="quota-text">故事剩余 {{ auth.remainingStories }} / {{ auth.usage.limit }}</span>
+    </div>
     <el-form label-position="top" size="small" class="ai-form">
       <el-form-item label="故事创意">
         <el-input
@@ -53,7 +56,7 @@
       </el-form-item>
 
       <div class="ai-actions">
-        <el-button type="primary" :loading="loading" @click="handleGenerate">
+        <el-button type="primary" :loading="loading" :disabled="auth.remainingStories <= 0" @click="handleGenerate">
           {{ loading ? '生成中' : '生成故事' }}
         </el-button>
         <el-button @click="fillFromCurrent">读取当前设定</el-button>
@@ -65,9 +68,11 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { generateStory } from '@/api/story.js'
+import { generateAIStory } from '@/api/story.js'
+import { useAuthStore } from '@/stores/authStore.js'
 import { useStoryStore } from '@/stores/storyStore.js'
 
+const auth = useAuthStore()
 const store = useStoryStore()
 const loading = ref(false)
 
@@ -88,52 +93,9 @@ function fillFromCurrent() {
 }
 
 function extractStoryPayload(response) {
-  const payload = response?.data || response?.story || response
+  const payload = response?.story || response?.data?.story || response?.data || response
   if (typeof payload === 'object') return payload
-
-  if (typeof payload !== 'string') {
-    throw new Error('AI 返回格式无法识别')
-  }
-
-  const jsonText = payload.match(/\{[\s\S]*\}/)?.[0]
-  if (!jsonText) {
-    throw new Error('AI 返回内容中没有找到故事 JSON')
-  }
-
-  return JSON.parse(jsonText)
-}
-
-function buildPrompt() {
-  return `请生成一篇适合图文故事编辑器使用的中文故事，并严格返回 JSON。
-
-JSON 结构：
-{
-  "title": "故事标题",
-  "subtitle": "副标题",
-  "tag": "标签",
-  "ending": "结尾寄语",
-  "characters": [{ "name": "角色名", "color": "#E0F0E4", "side": "left 或 right" }],
-  "chapters": [{
-    "title": "章节标题",
-    "numeral": "一",
-    "blocks": [
-      { "type": "timestamp", "time": "时间", "place": "地点" },
-      { "type": "narrator", "text": "旁白" },
-      { "type": "dialogue", "speaker": "角色名", "text": "台词", "thought": "可选心理活动" },
-      { "type": "monologue", "text": "内心独白" },
-      { "type": "quote", "text": "金句" },
-      { "type": "phone", "header": "-- 微信消息 --", "messages": [{ "speaker": "角色名", "text": "消息" }] },
-      { "type": "illustration", "prompt": "插图画面描述" }
-    ]
-  }]
-}
-
-创意：${form.idea}
-类型：${form.genre}
-风格：${form.tone}
-章节数：${form.chapterCount}
-主要角色：${form.characters || '请根据创意自行设计 2 个主要角色'}
-要求：剧情完整、有冲突和转折；每章 5 到 8 个内容块；对话和旁白交替出现。`
+  throw new Error('AI 返回格式无法识别')
 }
 
 async function handleGenerate() {
@@ -144,14 +106,14 @@ async function handleGenerate() {
 
   loading.value = true
   try {
-    const response = await generateStory({
+    const response = await generateAIStory({
       idea: form.idea,
       genre: form.genre,
       tone: form.tone,
       chapterCount: form.chapterCount,
       characters: form.characters,
-      prompt: buildPrompt(),
     })
+    auth.updateUsage(response.usage)
     const generatedStory = extractStoryPayload(response)
     store.applyGeneratedStory(generatedStory, form.mode)
     ElMessage.success(form.mode === 'append' ? 'AI 故事已追加' : 'AI 故事已写入')
@@ -188,6 +150,14 @@ async function handleGenerate() {
     height: 1px;
     background: var(--accent-soft);
   }
+}
+
+.quota-text {
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0;
+  color: var(--ink-2);
+  white-space: nowrap;
 }
 
 .ai-form {

@@ -10,8 +10,12 @@ export function nl2br(value) {
   return String(value || '').replace(/\n/g, '<br>')
 }
 
+export function normalizeHexColor(value, fallback = '#C07858') {
+  return /^#[0-9a-f]{6}$/i.test(value) ? value : fallback
+}
+
 export function hexToRgba(hex, alpha) {
-  const normalized = /^#[0-9a-f]{6}$/i.test(hex) ? hex : '#C07858'
+  const normalized = normalizeHexColor(hex)
   const r = parseInt(normalized.slice(1, 3), 16)
   const g = parseInt(normalized.slice(3, 5), 16)
   const b = parseInt(normalized.slice(5, 7), 16)

@@ -7,16 +7,16 @@
         <div class="section-title">基本信息</div>
         <el-form label-position="top" size="small">
           <el-form-item label="故事标题">
-            <el-input v-model="story.title" placeholder="故事标题" @input="store.save()" />
+            <el-input v-model="story.title" placeholder="故事标题" />
           </el-form-item>
           <el-form-item label="副标题">
-            <el-input v-model="story.subtitle" placeholder="副标题" @input="store.save()" />
+            <el-input v-model="story.subtitle" placeholder="副标题" />
           </el-form-item>
           <el-form-item label="标签文字">
-            <el-input v-model="story.tag" placeholder="例如：图文故事、泪点记录" @input="store.save()" />
+            <el-input v-model="story.tag" placeholder="例如：图文故事、泪点记录" />
           </el-form-item>
           <el-form-item label="结尾寄语">
-            <el-input v-model="story.ending" type="textarea" :rows="3" placeholder="结尾文字" @input="store.save()" />
+            <el-input v-model="story.ending" type="textarea" :rows="3" placeholder="结尾文字" />
           </el-form-item>
         </el-form>
       </section>
@@ -25,9 +25,9 @@
         <div class="section-title">人物设置</div>
         <div v-for="(char, index) in story.characters" :key="char.id" class="char-row">
           <span class="char-index">{{ index + 1 }}</span>
-          <el-input v-model="char.name" size="small" placeholder="角色名称" @input="store.save()" />
-          <el-color-picker v-model="char.color" size="small" @change="store.save()" />
-          <el-select v-model="char.side" size="small" class="char-side" @change="store.save()">
+          <el-input v-model="char.name" size="small" placeholder="角色名称" />
+          <el-color-picker v-model="char.color" size="small" />
+          <el-select v-model="char.side" size="small" class="char-side">
             <el-option label="左侧" value="left" />
             <el-option label="右侧" value="right" />
           </el-select>
@@ -37,12 +37,12 @@
             type="danger"
             size="small"
             title="删除角色"
-            @click="store.deleteChar(index)"
+            @click="deleteChar(index)"
           >
             删除
           </el-button>
         </div>
-        <el-button class="wide-action" plain type="success" size="small" @click="store.addChar()">添加角色</el-button>
+        <el-button class="wide-action" plain type="success" size="small" @click="addChar">添加角色</el-button>
       </section>
 
       <section class="section-group">
@@ -50,11 +50,11 @@
         <div class="color-row">
           <label class="color-field">
             <span>主色调</span>
-            <el-color-picker v-model="story.accent" @change="store.save()" />
+            <el-color-picker v-model="story.accent" />
           </label>
           <label class="color-field">
             <span>页面背景</span>
-            <el-color-picker v-model="story.bg" @change="store.save()" />
+            <el-color-picker v-model="story.bg" />
           </label>
         </div>
       </section>
@@ -66,20 +66,12 @@
             v-for="(chapter, chapterIndex) in story.chapters"
             :key="chapterIndex"
             :chapter="chapter"
-            :ci="chapterIndex"
+            :chapters="story.chapters"
             :characters="story.characters"
-            @delete="store.deleteChapter(chapterIndex)"
-            @update-title="value => { chapter.title = value; store.save() }"
-            @update-numeral="value => { chapter.numeral = value; store.save() }"
-            @add-block="store.addBlock(chapterIndex)"
-            @delete-block="blockIndex => store.deleteBlock(chapterIndex, blockIndex)"
-            @update-block="(blockIndex, payload) => updateBlock(chapterIndex, blockIndex, payload)"
-            @change-block-type="(blockIndex, newType) => store.changeBlockType(chapterIndex, blockIndex, newType)"
-            @add-phone-msg="blockIndex => store.addPhoneMsg(chapterIndex, blockIndex)"
-            @delete-phone-msg="(blockIndex, messageIndex) => store.deletePhoneMsg(chapterIndex, blockIndex, messageIndex)"
+            :ci="chapterIndex"
           />
         </div>
-        <el-button class="wide-action" plain type="primary" size="small" @click="store.addChapter()">添加章节</el-button>
+        <el-button class="wide-action" plain type="primary" size="small" @click="addChapter">添加章节</el-button>
       </section>
     </div>
 
@@ -93,7 +85,10 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { createStory, fetchStories, updateStory } from '@/api/story.js'
 import { useStoryStore } from '@/stores/storyStore.js'
+import { newCharId, NUMERALS } from '@/utils/index.js'
+import { normalizeStoryLibrary } from '@/utils/storyLibrary.js'
 import AiStoryPanel from './AiStoryPanel.vue'
 import ChapterCard from './ChapterCard.vue'
 
@@ -107,8 +102,8 @@ const story = computed(() => store.story)
 const saveBtnText = ref('完成，保存到故事库')
 const saveBtnStyle = ref({})
 
-function handleComplete() {
-  const result = store.completeStory()
+async function handleComplete() {
+  const result = await completeStory()
   if (!result) return
 
   saveBtnText.value = result
@@ -119,16 +114,65 @@ function handleComplete() {
   }, 1800)
 }
 
-function updateBlock(chapterIndex, blockIndex, { key, value }) {
-  const parts = key.split('.')
-  let target = story.value.chapters[chapterIndex].blocks[blockIndex]
-
-  for (let index = 0; index < parts.length - 1; index += 1) {
-    target = target[parts[index]]
+async function completeStory() {
+  if (!story.value.title?.trim()) {
+    alert('请先填写故事标题再保存')
+    return false
   }
 
-  target[parts[parts.length - 1]] = value
-  store.save()
+  if (store.activeStoryId) {
+    await updateStory(store.activeStoryId, { story: story.value })
+    await refreshLibrary()
+    return '已更新'
+  }
+
+  const result = await createStory({ story: story.value })
+  store.activeStoryId = result?.story?.id || null
+  await refreshLibrary()
+  return '已保存'
+}
+
+async function refreshLibrary() {
+  const result = await fetchStories()
+  store.library = normalizeStoryLibrary(result)
+}
+
+function addChar() {
+  story.value.characters.push({ id: newCharId(), name: '新角色', color: '#E8E0FF', side: 'left' })
+}
+
+function deleteChar(index) {
+  if (!story.value.characters[index]) return
+
+  if (story.value.characters.length <= 1) {
+    alert('至少保留一个角色')
+    return
+  }
+
+  const removedId = story.value.characters[index].id
+  story.value.characters.splice(index, 1)
+  const fallbackSpeaker = story.value.characters[0].id
+
+  story.value.chapters.forEach(chapter => {
+    chapter.blocks.forEach(block => {
+      if (block.type === 'dialogue' && block.speaker === removedId) block.speaker = fallbackSpeaker
+      if (block.type === 'phone') {
+        ;(block.messages || []).forEach(message => {
+          if (message.charId === removedId) message.charId = fallbackSpeaker
+        })
+      }
+    })
+  })
+}
+
+function addChapter() {
+  const index = story.value.chapters.length
+  const defaultSpeaker = story.value.characters[0]?.id || 'c0'
+  story.value.chapters.push({
+    title: '新章节',
+    numeral: NUMERALS[index] || String(index + 1),
+    blocks: [{ type: 'narrator', text: '', speaker: defaultSpeaker }],
+  })
 }
 </script>
 

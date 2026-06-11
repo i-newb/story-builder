@@ -1,9 +1,5 @@
 <template>
   <div class="block-editor">
-    <el-select size="small" :model-value="block.type" @change="emit('type-change', $event)">
-      <el-option v-for="(label, type) in BLOCK_LABELS" :key="type" :label="label" :value="type" />
-    </el-select>
-
     <template v-if="['narrator', 'quote', 'monologue'].includes(block.type)">
       <el-input :model-value="block.text" type="textarea" :rows="4" placeholder="输入文字"
         @input="update('text', $event)" />
@@ -24,13 +20,22 @@
         <el-input :model-value="block.prompt" type="textarea" :rows="3"
           placeholder="例如：黄昏时分，一个男生手持玫瑰站在小区门口，简笔手绘风格、温暖配色、手账感、人物圆润可爱、要求构图完整" @input="update('prompt', $event)" />
         <div class="image-toolbar">
-          <el-button size="small" type="primary" :loading="illusLoading" @click="generateIllustration">
+          <el-button
+            size="small"
+            type="primary"
+            :loading="illusLoading"
+            :disabled="auth.remainingImages <= 0"
+            @click="generateIllustration"
+          >
             生成插图
           </el-button>
-          <el-button v-if="block.svg" size="small" @click="update('svg', '')">清除</el-button>
+          <el-button v-if="block.svg" size="small" @click="clearIllustration">清除</el-button>
         </div>
+        <span class="status-text">插图剩余 {{ auth.remainingImages }} / {{ auth.usage.limit }}</span>
         <span v-if="illusStatus" class="status-text">{{ illusStatus }}</span>
-        <div v-if="block.svg" class="illus-preview-thumb" v-html="block.svg"></div>
+        <div v-if="block.svg" class="illus-preview-thumb">
+          <img :src="block.svg" alt="AI 生成插图" />
+        </div>
         <div v-else class="illus-preview-empty">尚未生成插图</div>
       </div>
     </template>
@@ -61,10 +66,10 @@
           </el-select>
           <el-input size="small" :model-value="msg.text" placeholder="消息内容"
             @input="updatePhoneMsg(index, 'text', $event)" />
-          <el-button text type="danger" size="small" @click="emit('delete-phone-msg', index)">删除</el-button>
+          <el-button text type="danger" size="small" @click="deletePhoneMsg(index)">删除</el-button>
         </div>
       </div>
-      <el-button class="add-msg-btn" size="small" plain @click="emit('add-phone-msg')">添加消息</el-button>
+      <el-button class="add-msg-btn" size="small" plain @click="addPhoneMsg">添加消息</el-button>
     </template>
   </div>
 </template>
@@ -72,54 +77,67 @@
 <script setup>
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { BLOCK_LABELS } from '@/utils/index.js'
-import { generateZhipuImage } from '@/api/story.js'
+import { generateAIImage } from '@/api/story.js'
+import { useAuthStore } from '@/stores/authStore.js'
 
 const props = defineProps({
   block: Object,
   characters: Array,
-  ci: Number,
-  bi: Number,
 })
 
-const emit = defineEmits(['update', 'type-change', 'add-phone-msg', 'delete-phone-msg', 'svg-generated'])
-
+const auth = useAuthStore()
 const illusLoading = ref(false)
 const illusStatus = ref('')
 
 function update(key, value) {
-  emit('update', { key, value })
+  const parts = key.split('.')
+  let target = props.block
+
+  for (let index = 0; index < parts.length - 1; index += 1) {
+    if (target[parts[index]] == null) return
+    target = target[parts[index]]
+  }
+
+  target[parts[parts.length - 1]] = value
 }
 
 function updatePhoneMsg(index, key, value) {
-  emit('update', { key: `messages.${index}.${key}`, value })
+  update(`messages.${index}.${key}`, value)
+}
+
+function clearIllustration() {
+  update('svg', '')
+  update('imageUrl', '')
+}
+
+function addPhoneMsg() {
+  if (!props.block.messages) props.block.messages = []
+  props.block.messages.push({ charId: props.characters?.[0]?.id || 'c0', side: 'left', text: '' })
+}
+
+function deletePhoneMsg(index) {
+  props.block.messages?.splice(index, 1)
 }
 
 function buildImagePrompt(prompt) {
   return `请为以下故事场景生成一张温暖手绘风格插图。场景描述：${prompt}`
 }
 
-/**
- * 智谱 AI 图片生成（GLM Image 模型）
- * @param fullPrompt 提示词
- */
-async function generateWithZhipu(fullPrompt) {
-  const data = await generateZhipuImage({
+async function generateWithAI(fullPrompt) {
+  const data = await generateAIImage({
     model: 'glm-image',
     prompt: fullPrompt,
     n: 1,
     size: '1024x1024',
   })
   if (data.error) throw new Error(data.error.message)
+  auth.updateUsage(data.usage)
 
   const url = data.data?.[0]?.url
   if (!url) throw new Error('智谱 AI 未返回图片数据')
-  return `<img src="${url}" style="width:100%;height:260px;object-fit:cover;display:block" alt="AI 生成插图" />`
+  return url
 }
 
-/**
- * 生成插图
- */
 async function generateIllustration() {
   const prompt = (props.block.prompt || '').trim()
   if (!prompt) {
@@ -132,9 +150,10 @@ async function generateIllustration() {
 
   try {
     const fullPrompt = buildImagePrompt(prompt)
-    const result = await generateWithZhipu(fullPrompt)
+    const result = await generateWithAI(fullPrompt)
 
     update('svg', result)
+    update('imageUrl', result)
     illusStatus.value = '插图已生成'
     setTimeout(() => {
       illusStatus.value = ''
@@ -165,10 +184,6 @@ async function generateIllustration() {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
-  }
-
-  .engine-select {
-    min-width: 128px;
   }
 
   .status-text {
@@ -204,6 +219,11 @@ async function generateIllustration() {
   .illus-preview-thumb {
     overflow: hidden;
     line-height: 0;
+  }
+
+  .illus-preview-thumb img {
+    width: 100%;
+    display: block;
   }
 
   .illus-preview-empty {
