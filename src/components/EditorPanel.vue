@@ -31,14 +31,8 @@
             <el-option label="左侧" value="left" />
             <el-option label="右侧" value="right" />
           </el-select>
-          <el-button
-            v-if="story.characters.length > 1"
-            text
-            type="danger"
-            size="small"
-            title="删除角色"
-            @click="deleteChar(index)"
-          >
+          <el-button v-if="story.characters.length > 1" text type="danger" size="small" title="删除角色"
+            @click="deleteChar(index)">
             删除
           </el-button>
         </div>
@@ -62,14 +56,8 @@
       <section class="section-group">
         <div class="section-title">章节内容</div>
         <div class="chapters-list">
-          <ChapterCard
-            v-for="(chapter, chapterIndex) in story.chapters"
-            :key="chapterIndex"
-            :chapter="chapter"
-            :chapters="story.chapters"
-            :characters="story.characters"
-            :ci="chapterIndex"
-          />
+          <ChapterCard v-for="(chapter, chapterIndex) in story.chapters" :key="chapterIndex" :chapter="chapter"
+            :chapters="story.chapters" :characters="story.characters" :ci="chapterIndex" />
         </div>
         <el-button class="wide-action" plain type="primary" size="small" @click="addChapter">添加章节</el-button>
       </section>
@@ -85,6 +73,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { createStory, fetchStories, updateStory } from '@/api/story.js'
 import { useStoryStore } from '@/stores/storyStore.js'
 import { newCharId, NUMERALS } from '@/utils/index.js'
@@ -116,7 +105,9 @@ async function handleComplete() {
 
 async function completeStory() {
   if (!story.value.title?.trim()) {
-    alert('请先填写故事标题再保存')
+    ElMessageBox.alert('请先填写故事标题再保存', '提示', {
+      confirmButtonText: '关闭',
+    })
     return false
   }
 
@@ -145,7 +136,9 @@ function deleteChar(index) {
   if (!story.value.characters[index]) return
 
   if (story.value.characters.length <= 1) {
-    alert('至少保留一个角色')
+    ElMessageBox.alert('至少保留一个角色', '提示', {
+      confirmButtonText: '关闭',
+    })
     return
   }
 
@@ -157,7 +150,7 @@ function deleteChar(index) {
     chapter.blocks.forEach(block => {
       if (block.type === 'dialogue' && block.speaker === removedId) block.speaker = fallbackSpeaker
       if (block.type === 'phone') {
-        ;(block.messages || []).forEach(message => {
+        ; (block.messages || []).forEach(message => {
           if (message.charId === removedId) message.charId = fallbackSpeaker
         })
       }
@@ -177,143 +170,143 @@ function addChapter() {
 </script>
 
 <style scoped lang="scss">
-.editor-panel {
-  width: var(--sidebar-w);
-  flex-shrink: 0;
-  background: var(--surface);
-  border-right: 1.5px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.editor-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.section-group {
-  margin-bottom: 24px;
-
-  :deep(.el-form-item) {
-    margin-bottom: 12px;
-  }
-}
-
-.section-title {
-  font-family: "ZCOOL KuaiLe", cursive;
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: var(--accent);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--accent-soft);
-  }
-}
-
-.char-row {
-  display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) 36px 72px auto;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 10px;
-  border: 1.5px solid var(--border);
-  border-radius: 7px;
-  background: #fafaf8;
-  margin-bottom: 7px;
-}
-
-.char-index {
-  font-family: "Ma Shan Zheng", cursive;
-  font-size: 16px;
-  color: var(--accent);
-  text-align: center;
-}
-
-.char-side {
-  width: 72px;
-}
-
-.wide-action {
-  width: 100%;
-  margin-top: 4px;
-}
-
-.color-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.color-field {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 10px;
-  border: 1.5px solid var(--border);
-  border-radius: 7px;
-  background: #fafaf8;
-  font-size: 12px;
-  color: var(--ink-2);
-}
-
-.chapters-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.editor-footer {
-  padding: 12px 16px;
-  border-top: 1.5px solid var(--border);
-  flex-shrink: 0;
-}
-
-.save-button {
-  width: 100%;
-}
-
-@media (max-width: 768px) {
   .editor-panel {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1.5px solid var(--border);
-    display: none;
-    height: calc(100vh - 52px);
-    max-height: none;
-  }
-
-  .editor-panel.mobile-active {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1.5px solid var(--border);
     display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-}
 
-@media (max-width: 520px) {
-  .char-row {
-    grid-template-columns: 20px minmax(0, 1fr) 36px 72px;
+  .editor-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
 
-    .el-button {
-      grid-column: 2 / -1;
-      justify-self: end;
+  .section-group {
+    margin-bottom: 24px;
+
+    :deep(.el-form-item) {
+      margin-bottom: 12px;
     }
   }
 
-  .color-row {
-    grid-template-columns: 1fr;
-  }
-}
+  .section-title {
+    font-family: "ZCOOL KuaiLe", cursive;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
-@media (min-width: 769px) {
-  .editor-panel {
-    display: flex !important;
+    &::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--accent-soft);
+    }
   }
-}
+
+  .char-row {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) 36px 72px auto;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    background: #fafaf8;
+    margin-bottom: 7px;
+  }
+
+  .char-index {
+    font-family: "Ma Shan Zheng", cursive;
+    font-size: 16px;
+    color: var(--accent);
+    text-align: center;
+  }
+
+  .char-side {
+    width: 72px;
+  }
+
+  .wide-action {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .color-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .color-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    background: #fafaf8;
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+
+  .chapters-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .editor-footer {
+    padding: 12px 16px;
+    border-top: 1.5px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .save-button {
+    width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    .editor-panel {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1.5px solid var(--border);
+      display: none;
+      height: calc(100vh - 52px);
+      max-height: none;
+    }
+
+    .editor-panel.mobile-active {
+      display: flex;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .char-row {
+      grid-template-columns: 20px minmax(0, 1fr) 36px 72px;
+
+      .el-button {
+        grid-column: 2 / -1;
+        justify-self: end;
+      }
+    }
+
+    .color-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (min-width: 769px) {
+    .editor-panel {
+      display: flex !important;
+    }
+  }
 </style>

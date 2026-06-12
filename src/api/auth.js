@@ -9,5 +9,5 @@ export function register(payload) {
 }
 
 export function fetchCurrentUser() {
-  return request.get('/auth/me')
+  return request.get('/auth/user')
 }

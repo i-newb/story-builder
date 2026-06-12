@@ -59,7 +59,7 @@ ${messages}
 
   if (block.type === 'illustration') {
     if (!block.svg) return ''
-    return `  <div class="illus-block fade-in"><img src="${escHtml(block.svg)}" alt="AI 插图" /></div>`
+    return `  <div class="illus-block fade-in" role="img" aria-label="AI 插图" style="background-image:url('${escHtml(block.svg)}')"></div>`
   }
 
   return ''
@@ -162,8 +162,7 @@ export function generateHTML(story) {
       .timestamp-bar { display:flex; align-items:center; justify-content:center; gap:7px; margin:18px 0 10px; }
       .ts-dot { font-size:7px; color:#F5C842; line-height:1; flex-shrink:0; text-shadow:0 0 4px rgba(245,200,66,0.5); }
       .ts-text { display:inline-block; background:#FFFBEC; border:1px solid #F0E0A0; border-radius:20px; padding:4px 14px; font-size:11.5px; color:#7A6020; letter-spacing:0.5px; }
-      .illus-block { margin-bottom:14px; border-radius:10px; overflow:hidden; border:2px solid var(--border); box-shadow:3px 3px 0 rgba(0,0,0,0.07); background:var(--panel-bg); line-height:0; }
-      .illus-block svg, .illus-block img { width:100%; height:auto; display:block; }
+      .illus-block { height:280px; margin-bottom:14px; border-radius:10px; overflow:hidden; border:2px solid var(--border); box-shadow:3px 3px 0 rgba(0,0,0,0.07); background-color:var(--panel-bg); background-position:center; background-size:cover; background-repeat:no-repeat; line-height:0; }
       .quote-card { background:var(--ink); border-radius:8px; padding:24px 20px; margin-bottom:14px; box-shadow:3px 3px 0 rgba(0,0,0,0.15); position:relative; overflow:hidden; }
       .quote-card::before { content:'"'; position:absolute; top:-10px; left:10px; font-family:'Ma Shan Zheng',cursive; font-size:100px; color:rgba(255,255,255,0.06); line-height:1; }
       .quote-card p { font-size:13.5px; line-height:1.9; color:#EEE8E0; position:relative; z-index:1; white-space:pre-line; }

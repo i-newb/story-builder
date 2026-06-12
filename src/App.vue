@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import html2canvas from 'html2canvas'
 import { fetchStories } from '@/api/story.js'
 import { useAuthStore } from '@/stores/authStore.js'
@@ -41,14 +41,27 @@ const MAX_CANVAS_PIXELS = 80_000_000
 const auth = useAuthStore()
 const store = useStoryStore()
 const activeTab = ref('editor')
+const loadedLibraryUserId = ref(null)
+const libraryLoading = ref(false)
 
 onMounted(async () => {
   const restored = await auth.restoreSession()
-  if (restored) await loadLibrary()
+  if (restored) await ensureLibraryLoaded(true)
 })
 
-function switchTab(tab) {
+watch(
+  () => auth.user?.id,
+  async (userId, oldUserId) => {
+    if (userId === oldUserId) return
+    loadedLibraryUserId.value = null
+    store.library = []
+    if (userId) await ensureLibraryLoaded(true)
+  },
+)
+
+async function switchTab(tab) {
   activeTab.value = tab
+  if (tab === 'library') await ensureLibraryLoaded()
 }
 
 function onLibraryLoaded() {
@@ -67,10 +80,23 @@ async function loadLibrary() {
 async function handleAuthenticated() {
   activeTab.value = 'editor'
   store.story = defaultStory()
-  store.library = []
   store.activeStoryId = null
   resetCharIdCounter(2)
-  await loadLibrary()
+  await ensureLibraryLoaded(true)
+}
+
+async function ensureLibraryLoaded(force = false) {
+  const userId = auth.user?.id
+  if (!userId || libraryLoading.value) return
+  if (!force && loadedLibraryUserId.value === userId) return
+
+  libraryLoading.value = true
+  try {
+    await loadLibrary()
+    loadedLibraryUserId.value = userId
+  } finally {
+    libraryLoading.value = false
+  }
 }
 
 async function exportHTML() {

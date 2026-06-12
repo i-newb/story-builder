@@ -441,7 +441,8 @@ function blockKey(chapterIndex, blockIndex, block) {
 
 .illus-block img {
   width: 100%;
-  height: auto;
+  height: 280px;
+  object-fit: cover;
   display: block;
 }
 

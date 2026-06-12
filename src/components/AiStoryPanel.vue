@@ -6,12 +6,7 @@
     </div>
     <el-form label-position="top" size="small" class="ai-form">
       <el-form-item label="故事创意">
-        <el-input
-          v-model="form.idea"
-          type="textarea"
-          :rows="3"
-          placeholder="例如：雨夜高架上，普通少年遇到来自神话世界的骑士"
-        />
+        <el-input v-model="form.idea" type="textarea" :rows="4" placeholder="例如：雨夜高架上，普通少年遇到来自神话世界的骑士" />
       </el-form-item>
 
       <div class="ai-grid">
@@ -49,10 +44,7 @@
       </div>
 
       <el-form-item label="主要角色">
-        <el-input
-          v-model="form.characters"
-          placeholder="例如：楚子航，沉默少年；楚天骄，不靠谱但强大的父亲"
-        />
+        <el-input v-model="form.characters" type="textarea" :rows="2" placeholder="例如：雨夜高架上，普通少年遇到来自神话世界的骑士" />
       </el-form-item>
 
       <div class="ai-actions">
@@ -126,69 +118,69 @@ async function handleGenerate() {
 </script>
 
 <style scoped lang="scss">
-.ai-panel {
-  padding: 12px;
-  margin-bottom: 18px;
-  border: 1.5px solid var(--accent-soft);
-  border-radius: 8px;
-  background: #fffaf7;
-}
-
-.section-title {
-  font-family: "ZCOOL KuaiLe", cursive;
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: var(--accent);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--accent-soft);
+  .ai-panel {
+    padding: 12px;
+    margin-bottom: 18px;
+    border: 1.5px solid var(--accent-soft);
+    border-radius: 8px;
+    background: #fffaf7;
   }
-}
 
-.quota-text {
-  font-family: "Noto Sans SC", sans-serif;
-  font-size: 11px;
-  letter-spacing: 0;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
-
-.ai-form {
-  :deep(.el-form-item) {
+  .section-title {
+    font-family: "ZCOOL KuaiLe", cursive;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--accent);
     margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--accent-soft);
+    }
   }
 
-  :deep(.el-input-number) {
-    width: 100%;
+  .quota-text {
+    font-family: "Noto Sans SC", sans-serif;
+    font-size: 11px;
+    letter-spacing: 0;
+    color: var(--ink-2);
+    white-space: nowrap;
   }
-}
 
-.ai-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+  .ai-form {
+    :deep(.el-form-item) {
+      margin-bottom: 10px;
+    }
 
-.ai-actions {
-  display: flex;
-  gap: 8px;
-
-  .el-button {
-    flex: 1;
+    :deep(.el-input-number) {
+      width: 100%;
+    }
   }
-}
 
-@media (max-width: 520px) {
   .ai-grid {
-    grid-template-columns: 1fr;
-    gap: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
-}
+
+  .ai-actions {
+    display: flex;
+    gap: 8px;
+
+    .el-button {
+      flex: 1;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .ai-grid {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
 </style>

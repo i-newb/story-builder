@@ -33,7 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
   const bootstrapped = ref(false)
 
   const isLoggedIn = computed(() => Boolean(token.value && user.value && expiresAt.value > Date.now()))
-  const usage = computed(() => user.value?.usage || { storyGenerations: 0, imageGenerations: 0, limit: 5 })
+  const usage = computed(() => user.value?.usage || { storyGenerations: 0, imageGenerations: 0, limit: 2 })
   const remainingStories = computed(() => Math.max(0, usage.value.limit - usage.value.storyGenerations))
   const remainingImages = computed(() => Math.max(0, usage.value.limit - usage.value.imageGenerations))
 

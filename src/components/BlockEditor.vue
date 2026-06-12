@@ -79,6 +79,7 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { generateAIImage } from '@/api/story.js'
 import { useAuthStore } from '@/stores/authStore.js'
+import { useStoryStore } from '@/stores/storyStore.js'
 
 const props = defineProps({
   block: Object,
@@ -86,6 +87,7 @@ const props = defineProps({
 })
 
 const auth = useAuthStore()
+const store = useStoryStore()
 const illusLoading = ref(false)
 const illusStatus = ref('')
 
@@ -120,7 +122,8 @@ function deletePhoneMsg(index) {
 }
 
 function buildImagePrompt(prompt) {
-  return `请为以下故事场景生成一张温暖手绘风格插图。场景描述：${prompt}`
+  const storyType = String(store.story?.tag || '').trim() || '温暖手绘风格'
+  return `请为以下故事场景生成一张${storyType}的图片，要求逼真没有AI味。场景描述：${prompt}`
 }
 
 async function generateWithAI(fullPrompt) {
@@ -223,6 +226,8 @@ async function generateIllustration() {
 
   .illus-preview-thumb img {
     width: 100%;
+    height: 280px;
+    object-fit: cover;
     display: block;
   }
 
